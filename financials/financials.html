@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dairy Farm Financial Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    :root {
+      --primary: #5D8AA8;
+      --primary-light: #5D8AA8;
+      --secondary: #2196f3;
+      --warning: #ff9800;
+      --danger: #f44336;
+      --success: #5D8AA8;
+      --bg-light: #f5f9f6;
+      --text-dark: #2c3e50;
+      --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+    }
+    
+    .dashboard {
+      padding: 1rem;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: #5D8AA8;
+      border-radius: 8px;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .header h1 {
+      color: white;
+    }
+    
+    .date-time {
+      font-size: 1.1rem;
+      color: var(--text-dark);
+    }
+    
+    .filters-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      padding: 0.5rem;
+      flex-wrap: nowrap;
+    }
+    
+    .filter-btn {
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      flex: 1;
+      text-align: center;
+      font-size: 1rem;
+    }
+    
+    .filter-btn:hover {
+      background-color: #5D8AA8;
+      color: white;
+    }
+    
+    .filter-btn.active {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    .metrics-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 0.5rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    
+    .metric-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.2rem;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.3s ease;
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+    
+    .metric-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .metric-title {
+      color: var(--text-dark);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .metric-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .metric-change {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+    
+    .positive-change {
+      color: var(--success);
+    }
+    
+    .negative-change {
+      color: var(--danger);
+    }
+    
+    .charts-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .chart-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.2rem;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .chart-title {
+      font-size: 1.1rem;
+      color: var(--text-dark);
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
+    
+    .table-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.2rem;
+      box-shadow: var(--card-shadow);
+      overflow-x: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 0.8rem;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    th:nth-child(5), td:nth-child(5) {
+      text-align: center; /* Center-align the Status column */
+    }
+    
+    th {
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+    }
+    
+    tr:hover {
+      background-color: var(--bg-light);
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 0.3rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      min-width: 80px; /* Ensure consistent width for status badges */
+      text-align: center; /* Center text within badge */
+    }
+    
+    .status-paid {
+      background-color: rgba(139, 195, 74, 0.2);
+      color: var(--success);
+    }
+    
+    .status-pending {
+      background-color: rgba(255, 152, 0, 0.2);
+      color: var(--warning);
+    }
+    
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-light);
+    }
+    
+    .btn-secondary {
+      background-color: var(--secondary);
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #64b5f6;
+    }
+    
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background-color: #d32f2f;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-start; /* Align action buttons consistently */
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 1rem;
+      margin-top: 2rem;
+      color: #777;
+      font-size: 0.9rem;
+    }
+    
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background-color: var(--success);
+      color: white;
+      padding: 1rem;
+      border-radius: 4px;
+      box-shadow: var(--card-shadow);
+      transform: translateX(200%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .notification.show {
+      transform: translateX(0);
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background-color: white;
+      border-radius: 8px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: var(--card-shadow);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+    
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #777;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-dark);
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    
+    .input-error {
+      border-color: var(--danger);
+    }
+    
+    .error-message {
+      color: var(--danger);
+      font-size: 0.8rem;
+      margin-top: 0.2rem;
+      display: none;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      .filters-container {
+        flex-wrap: wrap;
+      }
+      
+      .filter-btn {
+        flex: 1 1 30%;
+        margin-bottom: 0.5rem;
+      }
+      
+      .metrics-container {
+        flex-wrap: nowrap;
+      }
+      
+      .metric-card {
+        min-width: 150px;
+      }
+      
+      .charts-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="header">
+      <h1>Dairy Farm Financial</h1>
+      <div class="date-time" id="dateTime"></div>
+    </div>
+    
+    <div class="filters-container">
+      <button class="filter-btn active" data-period="day">Today</button>
+      <button class="filter-btn" data-period="week">This Week</button>
+      <button class="filter-btn" data-period="month">This Month</button>
+      <button class="filter-btn" data-period="quarter">This Quarter</button>
+      <button class="filter-btn" data-period="year">This Year</button>
+    </div>
+    
+    <div class="metrics-container">
+      <div class="metric-card">
+        <h3 class="metric-title">Total Revenue</h3>
+        <div class="metric-value" id="totalRevenue">$0</div>
+        <div class="metric-change positive-change">↑ <span id="revenueChange">0%</span> from previous period</div>
+      </div>
+      
+      <div class="metric-card">
+        <h3 class="metric-title">Milk Production</h3>
+        <div class="metric-value" id="milkProduction">0 L</div>
+        <div class="metric-change positive-change">↑ <span id="productionChange">0%</span> from previous period</div>
+      </div>
+      
+      <div class="metric-card">
+        <h3 class="metric-title">Expenses</h3>
+        <div class="metric-value" id="totalExpenses">$0</div>
+        <div class="metric-change negative-change">↑ <span id="expensesChange">0%</span> from previous period</div>
+      </div>
+      
+      <div class="metric-card">
+        <h3 class="metric-title">Net Profit</h3>
+        <div class="metric-value" id="netProfit">$0</div>
+        <div class="metric-change positive-change">↑ <span id="profitChange">0%</span> from previous period</div>
+      </div>
+    </div>
+    
+    <div class="charts-container">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Revenue Breakdown</h3>
+          <button class="btn btn-primary" id="refreshRevenueBtn">Refresh</button>
+        </div>
+        <div class="chart-container">
+          <canvas id="revenueDonutChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Expenses Breakdown</h3>
+          <button class="btn btn-primary" id="refreshExpensesBtn">Refresh</button>
+        </div>
+        <div class="chart-container">
+          <canvas id="expensesDonutChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Monthly Revenue Trend</h3>
+          <button class="btn btn-primary" id="refreshTrendBtn">Refresh</button>
+        </div>
+        <div class="chart-container">
+          <canvas id="revenueTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <div class="table-container">
+      <div class="chart-header">
+        <h3 class="chart-title">Recent Transactions</h3>
+        <button class="btn btn-primary" id="addTransactionBtn">Add Transaction</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="transactionsTable">
+          <!-- Transactions will be loaded here -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="footer">
+      Dairy Farm Financial Dashboard © 2025 | Last updated: <span id="lastUpdated"></span>
+    </div>
+  </div>
+  
+  <div class="notification" id="notification">
+    Data refreshed successfully!
+  </div>
+  
+  <div class="modal" id="transactionModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Add New Transaction</h2>
+        <button class="close-btn" id="closeModalBtn">×</button>
+      </div>
+      <form id="transactionForm">
+        <input type="hidden" id="transactionId">
+        <div class="form-group">
+          <label for="transactionDate">Date</label>
+          <input type="date" id="transactionDate" required>
+          <div class="error-message" id="dateError">Please select a valid date.</div>
+        </div>
+        <div class="form-group">
+          <label for="transactionDesc">Description</label>
+          <input type="text" id="transactionDesc" placeholder="Enter description" required>
+          <div class="error-message" id="descError">Description must be 5-15 characters and contain no more than 3 'a's.</div>
+        </div>
+        <div class="form-group">
+          <label for="transactionCategory">Category</label>
+          <select id="transactionCategory" required>
+            <option value="">Select category</option>
+            <option value="Milk Sales">Milk Sales</option>
+            <option value="Cattle Sales">Cattle Sales</option>
+            <option value="Feed Costs">Feed Costs</option>
+            <option value="Veterinary">Veterinary</option>
+            <option value="Labor">Labor</option>
+            <option value="Equipment">Equipment</option>
+            <option value="Utilities">Utilities</option>
+            <option value="Other">Other</option>
+          </select>
+          <div class="error-message" id="categoryError">Please select a category.</div>
+        </div>
+        <div class="form-group">
+          <label for="transactionAmount">Amount ($)</label>
+          <input type="number" id="transactionAmount" placeholder="Enter amount" step="0.01" required>
+          <div class="error-message" id="amountError">Amount must be a positive number.</div>
+        </div>
+        <div class="form-group">
+          <label for="transactionType">Type</label>
+          <select id="transactionType" required>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+          <div class="error-message" id="typeError">Please select a transaction type.</div>
+        </div>
+        <div class="form-group">
+          <label for="transactionStatus">Status</label>
+          <select id="transactionStatus" required>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+          </select>
+          <div class="error-message" id="statusError">Please select a status.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn" disabled>Save Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Initialize data
+    let currentPeriod = 'day';
+    let revenueData = {
+      day: {
+        total: 1250,
+        change: 3.5,
+        breakdown: [
+          { label: 'Milk Sales', value: 850 },
+          { label: 'Cattle Sales', value: 200 },
+          { label: 'Dairy Products', value: 150 },
+          { label: 'Other', value: 50 }
+        ]
+      },
+      week: {
+        total: 8750,
+        change: 5.2,
+        breakdown: [
+          { label: 'Milk Sales', value: 5500 },
+          { label: 'Cattle Sales', value: 1800 },
+          { label: 'Dairy Products', value: 950 },
+          { label: 'Other', value: 500 }
+        ]
+      },
+      month: {
+        total: 37500,
+        change: 7.8,
+        breakdown: [
+          { label: 'Milk Sales', value: 24000 },
+          { label: 'Cattle Sales', value: 7500 },
+          { label: 'Dairy Products', value: 4000 },
+          { label: 'Other', value: 2000 }
+        ]
+      },
+      quarter: {
+        total: 112500,
+        change: 10.2,
+        breakdown: [
+          { label: 'Milk Sales', value: 72000 },
+          { label: 'Cattle Sales', value: 22500 },
+          { label: 'Dairy Products', value: 12000 },
+          { label: 'Other', value: 6000 }
+        ]
+      },
+      year: {
+        total: 450000,
+        change: 12.5,
+        breakdown: [
+          { label: 'Milk Sales', value: 288000 },
+          { label: 'Cattle Sales', value: 90000 },
+          { label: 'Dairy Products', value: 48000 },
+          { label: 'Other', value: 24000 }
+        ]
+      }
+    };
+    
+    let productionData = {
+      day: { total: 2500, change: 2.1 },
+      week: { total: 17500, change: 4.3 },
+      month: { total: 75000, change: 6.5 },
+      quarter: { total: 225000, change: 8.2 },
+      year: { total: 900000, change: 11.4 }
+    };
+    
+    let expensesData = {
+      day: {
+        total: 850,
+        change: 1.8,
+        breakdown: [
+          { label: 'Feed', value: 350 },
+          { label: 'Labor', value: 250 },
+          { label: 'Veterinary', value: 100 },
+          { label: 'Utilities', value: 75 },
+          { label: 'Equipment', value: 50 },
+          { label: 'Other', value: 25 }
+        ]
+      },
+      week: {
+        total: 5950,
+        change: 2.5,
+        breakdown: [
+          { label: 'Feed', value: 2450 },
+          { label: 'Labor', value: 1750 },
+          { label: 'Veterinary', value: 700 },
+          { label: 'Utilities', value: 525 },
+          { label: 'Equipment', value: 350 },
+          { label: 'Other', value: 175 }
+        ]
+      },
+      month: {
+        total: 25500,
+        change: 3.2,
+        breakdown: [
+          { label: 'Feed', value: 10500 },
+          { label: 'Labor', value: 7500 },
+          { label: 'Veterinary', value: 3000 },
+          { label: 'Utilities', value: 2250 },
+          { label: 'Equipment', value: 1500 },
+          { label: 'Other', value: 750 }
+        ]
+      },
+      quarter: {
+        total: 76500,
+        change: 4.6,
+        breakdown: [
+          { label: 'Feed', value: 31500 },
+          { label: 'Labor', value: 22500 },
+          { label: 'Veterinary', value: 9000 },
+          { label: 'Utilities', value: 6750 },
+          { label: 'Equipment', value: 4500 },
+          { label: 'Other', value: 2250 }
+        ]
+      },
+      year: {
+        total: 306000,
+        change: 5.8,
+        breakdown: [
+          { label: 'Feed', value: 126000 },
+          { label: 'Labor', value: 90000 },
+          { label: 'Veterinary', value: 36000 },
+          { label: 'Utilities', value: 27000 },
+          { label: 'Equipment', value: 18000 },
+          { label: 'Other', value: 9000 }
+        ]
+      }
+    };
+    
+    let transactions = [
+      {
+        id: 1,
+        date: '2025-04-28',
+        description: 'Milk Sales',
+        category: 'Milk Sales',
+        amount: 850,
+        type: 'income',
+        status: 'paid'
+      },
+      {
+        id: 2,
+        date: '2025-04-28',
+        description: 'Feed Purchase',
+        category: 'Feed Costs',
+        amount: 350,
+        type: 'expense',
+        status: 'paid'
+      },
+      {
+        id: 3,
+        date: '2025-04-27',
+        description: 'Vet Checkup',
+        category: 'Veterinary',
+        amount: 100,
+        type: 'expense',
+        status: 'pending'
+      },
+      {
+        id: 4,
+        date: '2025-04-27',
+        description: 'Cattle Sale',
+        category: 'Cattle Sales',
+        amount: 1200,
+        type: 'income',
+        status: 'paid'
+      },
+      {
+        id: 5,
+        date: '2025-04-26',
+        description: 'Staff Wages',
+        category: 'Labor',
+        amount: 1750,
+        type: 'expense',
+        status: 'paid'
+      }
+    ];
+    
+    // Monthly trend data
+    const monthlyTrendData = {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      revenues: [32000, 34500, 31000, 37500, 36000, 38500, 41000, 42500, 40000, 39000, 38000, 40000],
+      expenses: [22000, 21500, 23000, 25500, 24000, 25000, 26500, 27000, 26000, 25500, 24500, 25500]
+    };
+    
+    // Charts
+    let revenueDonutChart;
+    let expensesDonutChart;
+    let revenueTrendChart;
+    
+    // DOM Elements
+    const dateTimeEl = document.getElementById('dateTime');
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+    const totalRevenueEl = document.getElementById('totalRevenue');
+    const revenueChangeEl = document.getElementById('revenueChange');
+    const milkProductionEl = document.getElementById('milkProduction');
+    const productionChangeEl = document.getElementById('productionChange');
+    const totalExpensesEl = document.getElementById('totalExpenses');
+    const expensesChangeEl = document.getElementById('expensesChange');
+    const netProfitEl = document.getElementById('netProfit');
+    const profitChangeEl = document.getElementById('profitChange');
+    const transactionsTableEl = document.getElementById('transactionsTable');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const notificationEl = document.getElementById('notification');
+    const transactionModal = document.getElementById('transactionModal');
+    const addTransactionBtn = document.getElementById('addTransactionBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const transactionForm = document.getElementById('transactionForm');
+    const refreshRevenueBtn = document.getElementById('refreshRevenueBtn');
+    const refreshExpensesBtn = document.getElementById('refreshExpensesBtn');
+    const refreshTrendBtn = document.getElementById('refreshTrendBtn');
+    const modalTitleEl = document.getElementById('modalTitle');
+    const saveBtnEl = document.getElementById('saveBtn');
+    
+    // Form input elements for validation
+    const transactionDateEl = document.getElementById('transactionDate');
+    const transactionDescEl = document.getElementById('transactionDesc');
+    const transactionCategoryEl = document.getElementById('transactionCategory');
+    const transactionAmountEl = document.getElementById('transactionAmount');
+    const transactionTypeEl = document.getElementById('transactionType');
+    const transactionStatusEl = document.getElementById('transactionStatus');
+    
+    // Error message elements
+    const dateErrorEl = document.getElementById('dateError');
+    const descErrorEl = document.getElementById('descError');
+    const categoryErrorEl = document.getElementById('categoryError');
+    const amountErrorEl = document.getElementById('amountError');
+    const typeErrorEl = document.getElementById('typeError');
+    const statusErrorEl = document.getElementById('statusError');
+    
+    // Initialize Dashboard
+    function initDashboard() {
+      updateDateTime();
+      updateMetrics();
+      initCharts();
+      renderTransactionsTable();
+      setLastUpdated();
+      setupFormValidation();
+      
+      // Set up event listeners
+      setInterval(updateDateTime, 1000);
+      
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentPeriod = btn.dataset.period;
+          updateMetrics();
+          updateCharts();
+          showNotification("Data updated for " + getPeriodLabel(currentPeriod));
+        });
+      });
+      
+      addTransactionBtn.addEventListener('click', () => openTransactionModal());
+      closeModalBtn.addEventListener('click', closeTransactionModal);
+      cancelBtn.addEventListener('click', closeTransactionModal);
+      transactionForm.addEventListener('submit', handleTransactionSubmit);
+      
+      refreshRevenueBtn.addEventListener('click', () => {
+        simulateRealtimeDataUpdate('revenue');
+        updateRevenueChart();
+        showNotification("Revenue data refreshed!");
+      });
+      
+      refreshExpensesBtn.addEventListener('click', () => {
+        simulateRealtimeDataUpdate('expenses');
+        updateExpensesChart();
+        showNotification("Expenses data refreshed!");
+      });
+      
+      refreshTrendBtn.addEventListener('click', () => {
+        simulateRealtimeDataUpdate('trend');
+        updateTrendChart();
+        showNotification("Revenue trend data refreshed!");
+      });
+    }
+    
+    // Real-time form validation
+    function setupFormValidation() {
+      const inputs = [transactionDateEl, transactionDescEl, transactionCategoryEl, transactionAmountEl, transactionTypeEl, transactionStatusEl];
+      inputs.forEach(input => {
+        input.addEventListener('input', validateForm);
+        input.addEventListener('change', validateForm);
+      });
+    }
+    
+    function validateForm() {
+      let isValid = true;
+      
+      // Validate Date
+      if (!transactionDateEl.value) {
+        transactionDateEl.classList.add('input-error');
+        dateErrorEl.style.display = 'block';
+        isValid = false;
+      } else {
+        transactionDateEl.classList.remove('input-error');
+        dateErrorEl.style.display = 'none';
+      }
+      
+      // Validate Description
+      const desc = transactionDescEl.value.trim();
+      const aCount = (desc.match(/[aA]/g) || []).length;
+      const descLength = desc.length;
+      if (!desc || descLength < 5 || descLength > 15 || aCount > 3) {
+        transactionDescEl.classList.add('input-error');
+        descErrorEl.style.display = 'block';
+        isValid = false;
+      } else {
+        transactionDescEl.classList.remove('input-error');
+        descErrorEl.style.display = 'none';
+      }
+      
+      // Validate Category
+      if (!transactionCategoryEl.value) {
+        transactionCategoryEl.classList.add('input-error');
+        categoryErrorEl.style.display = 'block';
+        isValid = false;
+      } else {
+        transactionCategoryEl.classList.remove('input-error');
+        categoryErrorEl.style.display = 'none';
+      }
+      
+      // Validate Amount
+      const amount = parseFloat(transactionAmountEl.value);
+      if (isNaN(amount) || amount <= 0) {
+        transactionAmountEl.classList.add('input-error');
+        amountErrorEl.style.display = 'block';
+        isValid = false;
+      } else {
+        transactionAmountEl.classList.remove('input-error');
+        amountErrorEl.style.display = 'none';
+      }
+      
+      // Validate Type
+      if (!transactionTypeEl.value) {
+        transactionTypeEl.classList.add('input-error');
+        typeErrorEl.style.display = 'block';
+        isValid = false;
+      } else {
+        transactionTypeEl.classList.remove('input-error');
+        typeErrorEl.style.display = 'none';
+      }
+      
+      // Validate Status
+      if (!transactionStatusEl.value) {
+        transactionStatusEl.classList.add('input-error');
+        statusErrorEl.style.display = 'block';
+        isValid = false;
+      } else {
+        transactionStatusEl.classList.remove('input-error');
+        statusErrorEl.style.display = 'none';
+      }
+      
+      // Enable/disable submit button
+      saveBtnEl.disabled = !isValid;
+    }
+    
+    function getPeriodLabel(period) {
+      const labels = {
+        day: "Today",
+        week: "This Week",
+        month: "This Month",
+        quarter: "This Quarter",
+        year: "This Year"
+      };
+      return labels[period] || period;
+    }
+    
+    // Update Date and Time
+    function updateDateTime() {
+      const now = new Date();
+      dateTimeEl.textContent = now.toLocaleString();
+    }
+    
+    // Update Last Updated timestamp
+    function setLastUpdated() {
+      const now = new Date();
+      lastUpdatedEl.textContent = now.toLocaleString();
+    }
+    
+    // Update metrics based on current period
+    function updateMetrics() {
+      const revenue = revenueData[currentPeriod].total;
+      const revenueChange = revenueData[currentPeriod].change;
+      const production = productionData[currentPeriod].total;
+      const productionChange = productionData[currentPeriod].change;
+      const expenses = expensesData[currentPeriod].total;
+      const expensesChange = expensesData[currentPeriod].change;
+      const profit = revenue - expenses;
+      const profitChange = calculateProfitChange(revenue, revenueChange, expenses, expensesChange);
+      
+      totalRevenueEl.textContent = formatCurrency(revenue);
+      revenueChangeEl.textContent = formatPercentage(revenueChange);
+      revenueChangeEl.parentElement.className = revenueChange >= 0 ? 'metric-change positive-change' : 'metric-change negative-change';
+      
+      milkProductionEl.textContent = formatNumber(production) + ' L';
+      productionChangeEl.textContent = formatPercentage(productionChange);
+      productionChangeEl.parentElement.className = productionChange >= 0 ? 'metric-change positive-change' : 'metric-change negative-change';
+      
+      totalExpensesEl.textContent = formatCurrency(expenses);
+      expensesChangeEl.textContent = formatPercentage(expensesChange);
+      expensesChangeEl.parentElement.className = expensesChange <= 0 ? 'metric-change positive-change' : 'metric-change negative-change';
+      
+      netProfitEl.textContent = formatCurrency(profit);
+      profitChangeEl.textContent = formatPercentage(profitChange);
+      profitChangeEl.parentElement.className = profitChange >= 0 ? 'metric-change positive-change' : 'metric-change negative-change';
+    }
+    
+    // Initialize Charts
+    function initCharts() {
+      // Revenue Donut Chart
+      const revenueCtx = document.getElementById('revenueDonutChart').getContext('2d');
+      revenueDonutChart = new Chart(revenueCtx, {
+        type: 'doughnut',
+        data: getRevenueChartData(),
+        options: getDonutChartOptions('Revenue Breakdown')
+      });
+      
+      // Expenses Donut Chart
+      const expensesCtx = document.getElementById('expensesDonutChart').getContext('2d');
+      expensesDonutChart = new Chart(expensesCtx, {
+        type: 'doughnut',
+        data: getExpensesChartData(),
+        options: getDonutChartOptions('Expenses Breakdown')
+      });
+      
+      // Revenue Trend Chart
+      const trendCtx = document.getElementById('revenueTrendChart').getContext('2d');
+      revenueTrendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: getTrendChartData(),
+        options: getTrendChartOptions()
+      });
+    }
+    
+    // Update Charts based on current period
+    function updateCharts() {
+      updateRevenueChart();
+      updateExpensesChart();
+      // No need to update trend chart as it's always showing annual data
+    }
+    
+    function updateRevenueChart() {
+      revenueDonutChart.data = getRevenueChartData();
+      revenueDonutChart.update();
+    }
+    
+    function updateExpensesChart() {
+      expensesDonutChart.data = getExpensesChartData();
+      expensesDonutChart.update();
+    }
+    
+    function updateTrendChart() {
+      revenueTrendChart.data = getTrendChartData();
+      revenueTrendChart.update();
+    }
+    
+    // Chart Data and Options
+    function getRevenueChartData() {
+      const data = revenueData[currentPeriod].breakdown;
+      return {
+        labels: data.map(item => item.label),
+        datasets: [{
+          data: data.map(item => item.value),
+          backgroundColor: [
+            'rgba(76, 175, 80, 0.8)',
+            'rgba(33, 150, 243, 0.8)',
+            'rgba(255, 152, 0, 0.8)',
+            'rgba(156, 39, 176, 0.8)'
+          ],
+          borderColor: '#fff',
+          borderWidth: 2
+        }]
+      };
+    }
+    
+    function getExpensesChartData() {
+      const data = expensesData[currentPeriod].breakdown;
+      return {
+        labels: data.map(item => item.label),
+        datasets: [{
+          data: data.map(item => item.value),
+          backgroundColor: [
+            'rgba(244, 67, 54, 0.8)',
+            'rgba(255, 152, 0, 0.8)',
+            'rgba(255, 193, 7, 0.8)',
+            'rgba(156, 39, 176, 0.8)',
+            'rgba(33, 150, 243, 0.8)',
+            'rgba(76, 175, 80, 0.8)'
+          ],
+          borderColor: '#fff',
+          borderWidth: 2
+        }]
+      };
+    }
+    
+    function getTrendChartData() {
+      return {
+        labels: monthlyTrendData.labels,
+        datasets: [
+          {
+            label: 'Revenue',
+            data: monthlyTrendData.revenues,
+            borderColor: 'rgba(76, 175, 80, 0.8)',
+            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+            tension: 0.4,
+            fill: true
+          },
+          {
+            label: 'Expenses',
+            data: monthlyTrendData.expenses,
+            borderColor: 'rgba(244, 67, 54, 0.8)',
+            backgroundColor: 'rgba(244, 67, 54, 0.2)',
+            tension: 0.4,
+            fill: true
+          }
+        ]
+      };
+    }
+    
+    function getDonutChartOptions(title) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              boxWidth: 12
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const percentage = Math.round((value / total) * 100);
+                return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+              }
+            }
+          }
+        },
+        cutout: '70%',
+        animation: {
+          animateScale: true,
+          animateRotate: true
+        }
+      };
+    }
+    
+    function getTrendChartOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.dataset.label || '';
+                const value = context.raw || 0;
+                return `${label}: ${formatCurrency(value)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return formatCurrency(value, true);
+              }
+            }
+          }
+        }
+      };
+    }
+    
+    // Render transactions table
+    function renderTransactionsTable() {
+      transactionsTableEl.innerHTML = '';
+      
+      transactions.forEach(transaction => {
+        const row = document.createElement('tr');
+        
+        const dateCell = document.createElement('td');
+        dateCell.textContent = formatDate(transaction.date);
+        row.appendChild(dateCell);
+        
+        const descCell = document.createElement('td');
+        descCell.textContent = transaction.description;
+        row.appendChild(descCell);
+        
+        const categoryCell = document.createElement('td');
+        categoryCell.textContent = transaction.category;
+        row.appendChild(categoryCell);
+        
+        const amountCell = document.createElement('td');
+        amountCell.textContent = formatCurrency(transaction.amount);
+        amountCell.style.color = transaction.type === 'income' ? 'var(--success)' : 'var(--danger)';
+        row.appendChild(amountCell);
+        
+        const statusCell = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = `status-badge status-${transaction.status}`;
+        statusBadge.textContent = transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1);
+        statusCell.appendChild(statusBadge);
+        row.appendChild(statusCell);
+        
+        const actionsCell = document.createElement('td');
+        const actionButtons = document.createElement('div');
+        actionButtons.className = 'action-buttons';
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn btn-primary';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', () => {
+          openTransactionModal(transaction);
+        });
+        actionButtons.appendChild(editBtn);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-danger';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.addEventListener('click', () => {
+          if (confirm('Are you sure you want to delete this transaction?')) {
+            deleteTransaction(transaction.id);
+          }
+        });
+        actionButtons.appendChild(deleteBtn);
+        
+        actionsCell.appendChild(actionButtons);
+        row.appendChild(actionsCell);
+        
+        transactionsTableEl.appendChild(row);
+      });
+    }
+    
+    // Delete transaction
+    function deleteTransaction(id) {
+      transactions = transactions.filter(t => t.id !== id);
+      renderTransactionsTable();
+      showNotification('Transaction deleted successfully!');
+      updateMetrics();
+    }
+    
+    // Transaction modal functions
+    function openTransactionModal(transaction = null) {
+      transactionModal.style.display = 'flex';
+      
+      if (transaction) {
+        // Edit mode
+        modalTitleEl.textContent = 'Edit Transaction';
+        saveBtnEl.textContent = 'Update Transaction';
+        document.getElementById('transactionId').value = transaction.id;
+        document.getElementById('transactionDate').value = transaction.date;
+        document.getElementById('transactionDesc').value = transaction.description;
+        document.getElementById('transactionCategory').value = transaction.category;
+        document.getElementById('transactionAmount').value = transaction.amount;
+        document.getElementById('transactionType').value = transaction.type;
+        document.getElementById('transactionStatus').value = transaction.status;
+      } else {
+        // Add mode
+        modalTitleEl.textContent = 'Add New Transaction';
+        saveBtnEl.textContent = 'Save Transaction';
+        transactionForm.reset();
+        document.getElementById('transactionDate').valueAsDate = new Date();
+        document.getElementById('transactionId').value = '';
+      }
+      
+      validateForm();
+    }
+    
+    function closeTransactionModal() {
+      transactionModal.style.display = 'none';
+      transactionForm.reset();
+      modalTitleEl.textContent = 'Add New Transaction';
+      saveBtnEl.textContent = 'Save Transaction';
+      // Reset error states
+      [transactionDateEl, transactionDescEl, transactionCategoryEl, transactionAmountEl, transactionTypeEl, transactionStatusEl].forEach(el => {
+        el.classList.remove('input-error');
+      });
+      [dateErrorEl, descErrorEl, categoryErrorEl, amountErrorEl, typeErrorEl, statusErrorEl].forEach(el => {
+        el.style.display = 'none';
+      });
+      saveBtnEl.disabled = true;
+    }
+    
+    function handleTransactionSubmit(e) {
+      e.preventDefault();
+      
+      // Final validation before submission
+      validateForm();
+      if (saveBtnEl.disabled) {
+        showNotification('Please correct the form errors.');
+        return;
+      }
+      
+      const transactionId = document.getElementById('transactionId').value;
+      const transactionData = {
+        id: transactionId ? parseInt(transactionId) : transactions.length + 1,
+        date: document.getElementById('transactionDate').value,
+        description: document.getElementById('transactionDesc').value.trim(),
+        category: document.getElementById('transactionCategory').value,
+        amount: parseFloat(document.getElementById('transactionAmount').value),
+        type: document.getElementById('transactionType').value,
+        status: document.getElementById('transactionStatus').value
+      };
+      
+      if (transactionId) {
+        // Update existing transaction
+        const index = transactions.findIndex(t => t.id === parseInt(transactionId));
+        if (index !== -1) {
+          transactions[index] = transactionData;
+          showNotification('Transaction updated successfully!');
+        }
+      } else {
+        // Add new transaction
+        transactions.unshift(transactionData);
+        showNotification('Transaction added successfully!');
+      }
+      
+      closeTransactionModal();
+      renderTransactionsTable();
+      
+      // Update financials based on transaction
+      simulateRealtimeDataUpdate('transaction', transactionData);
+      updateMetrics();
+      updateCharts();
+    }
+    
+    // Simulate real-time data updates
+    function simulateRealtimeDataUpdate(type, data) {
+      if (type === 'revenue') {
+        // Randomly adjust revenue breakdown
+        revenueData[currentPeriod].breakdown.forEach(item => {
+          const variation = Math.random() * 0.1 - 0.05; // -5% to +5%
+          item.value = Math.round(item.value * (1 + variation));
+        });
+        
+        // Update total
+        revenueData[currentPeriod].total = revenueData[currentPeriod].breakdown.reduce((sum, item) => sum + item.value, 0);
+        
+        // Update change percentage
+        revenueData[currentPeriod].change += (Math.random() * 2 - 1); // -1% to +1% adjustment
+      } 
+      else if (type === 'expenses') {
+        // Randomly adjust expenses breakdown
+        expensesData[currentPeriod].breakdown.forEach(item => {
+          const variation = Math.random() * 0.1 - 0.05; // -5% to +5%
+          item.value = Math.round(item.value * (1 + variation));
+        });
+        
+        // Update total
+        expensesData[currentPeriod].total = expensesData[currentPeriod].breakdown.reduce((sum, item) => sum + item.value, 0);
+        
+        // Update change percentage
+        expensesData[currentPeriod].change += (Math.random() * 2 - 1); // -1% to +1% adjustment
+      } 
+      else if (type === 'trend') {
+        // Randomly adjust trend data
+        monthlyTrendData.revenues = monthlyTrendData.revenues.map(value => {
+          const variation = Math.random() * 0.1 - 0.05; // -5% to +5%
+          return Math.round(value * (1 + variation));
+        });
+        
+        monthlyTrendData.expenses = monthlyTrendData.expenses.map(value => {
+          const variation = Math.random() * 0.1 - 0.05; // -5% to +5%
+          return Math.round(value * (1 + variation));
+        });
+      } 
+      else if (type === 'transaction') {
+        // Update financials based on new or updated transaction
+        if (data.type === 'income') {
+          // Find matching revenue category and add to it
+          const category = data.category === 'Milk Sales' ? 'Milk Sales' : 
+                           data.category === 'Cattle Sales' ? 'Cattle Sales' : 'Other';
+          
+          const categoryItem = revenueData[currentPeriod].breakdown.find(item => item.label === category);
+          if (categoryItem) {
+            categoryItem.value += data.amount;
+          }
+          
+          // Update total revenue
+          revenueData[currentPeriod].total += data.amount;
+          
+          // If it's milk sales, update production
+          if (category === 'Milk Sales') {
+            // Assume 1$ = 2L of milk
+            productionData[currentPeriod].total += data.amount * 2;
+          }
+        } else {
+          // Find matching expense category and add to it
+          const category = data.category === 'Feed Costs' ? 'Feed' : 
+                           data.category === 'Labor' ? 'Labor' : 
+                           data.category === 'Veterinary' ? 'Veterinary' : 
+                           data.category === 'Equipment' ? 'Equipment' : 
+                           data.category === 'Utilities' ? 'Utilities' : 'Other';
+          
+          const categoryItem = expensesData[currentPeriod].breakdown.find(item => item.label === category);
+          if (categoryItem) {
+            categoryItem.value += data.amount;
+          }
+          
+          // Update total expenses
+          expensesData[currentPeriod].total += data.amount;
+        }
+      }
+      
+      // Update metrics and charts
+      updateMetrics();
+      setLastUpdated();
+    }
+    
+    // Show notification
+    function showNotification(message) {
+      notificationEl.textContent = message;
+      notificationEl.classList.add('show');
+      
+      setTimeout(() => {
+        notificationEl.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Utility functions
+    function formatCurrency(value, abbreviated = false) {
+      if (abbreviated && value >= 1000) {
+        return '$' + (value / 1000).toFixed(1) + 'k';
+      }
+      return '$' + value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    
+    function formatNumber(value) {
+      return value.toLocaleString();
+    }
+    
+    function formatPercentage(value) {
+      return value.toFixed(1) + '%';
+    }
+    
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    }
+    
+    function calculateProfitChange(revenue, revenueChange, expenses, expensesChange) {
+      const prevRevenue = revenue / (1 + revenueChange / 100);
+      const prevExpenses = expenses / (1 + expensesChange / 100);
+      
+      const currentProfit = revenue - expenses;
+      const prevProfit = prevRevenue - prevExpenses;
+      
+      if (prevProfit === 0) return 0;
+      return ((currentProfit - prevProfit) / Math.abs(prevProfit)) * 100;
+    }
+    
+    // Initialize the dashboard when the page loads
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>

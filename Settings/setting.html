@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dairy Farm Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            background-color: #5D8AA8;
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            color: #fff;
+        }
+        .weather-widget {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .weather-icon {
+            color: #f39c12;
+        }
+        .weather-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .weather-temp {
+            font-weight: bold;
+            font-size: 18px;
+            color: #fff;
+        }
+        .weather-info span {
+            color: #fff;
+        }
+        .clock {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            position: absolute;
+            right: 20px;
+        }
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .quick-action-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: #fff;
+            border: 1px solid #e1e4e8;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .quick-action-button:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        .quick-action-button svg {
+            color: #3498db;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .card-icon {
+            color: #3498db;
+        }
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+        .setting-label {
+            font-weight: 500;
+            color: #555;
+        }
+        .setting-value {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .button {
+            padding: 8px 16px;
+            border-radius: 5px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .button-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        .button-primary:hover {
+            background-color: #2980b9;
+        }
+        .button-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .button-secondary:hover {
+            background-color: #e0e0e0;
+        }
+        .button-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        .button-warning:hover {
+            background-color: #e67e22;
+        }
+        .button.disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .toggle:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle {
+            background-color: #3498db;
+        }
+        input:checked + .toggle:before {
+            transform: translateX(26px);
+        }
+        .slider {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+        .status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .status-active {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .status-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        .alert {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .alert-warning {
+            background-color: #fcf8e3;
+            color: #8a6d3b;
+            border: 1px solid #faebcc;
+        }
+        .chart-container {
+            margin: 15px 0;
+        }
+        .chart {
+ composite: 150px;
+            padding: 10px 0;
+        }
+        .chart-bar {
+            flex: 1;
+            background-color: #3498db;
+            border-radius: 3px 3px 0 0;
+            transition: height 0.3s;
+            position: relative;
+        }
+        .chart-bar:hover::after {
+            content: attr(title);
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 500px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-large {
+            width: 800px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #777;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        .form-input, .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-input.invalid, .form-select.invalid {
+            border-color: #e74c3c;
+        }
+        .form-error {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .form-error.visible {
+            display: block;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .data-table th, .data-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .editable-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .edit-button {
+            background: none;
+            border: none;
+            color: #3498db;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .inline-edit {
+            padding: 3px 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 120px;
+        }
+        .inline-edit.invalid {
+            border-color: #e74c3c;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 0.8s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .report-section {
+            margin-bottom: 20px;
+        }
+        .report-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .report-data {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .farm-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #555;
+        }
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            .clock {
+                position: static;
+                margin-top: 10px;
+            }
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-title">
+                <h1>Settings</h1>
+                <div class="weather-widget">
+                    <div class="weather-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </div>
+                    <div class="weather-info">
+                        <span class="weather-temp" id="outside-temp">18°C</span>
+                        <span>Clear</span>
+                    </div>
+                </div>
+            </div>
+            <div class="clock" id="clock">Loading...</div>
+        </header>
+
+        <div class="quick-actions">
+            <button class="quick-action-button" id="run-system-check">System Check</button>
+            <button class="quick-action-button" id="emergency-stop">Emergency Stop</button>
+            <button class="quick-action-button" id="generate-report">Generate Report</button>
+            <button class="quick-action-button" id="add-new-cow">Add New Cow</button>
+            <button class="quick-action-button" id="view-all-settings">All Settings</button>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Barn Climate</h2>
+                    <span class="status status-active">Active</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Current Temperature:</span>
+                    <div class="editable-field">
+                        <span class="setting-value" id="current-temp">20°C</span>
+                        <button class="edit-button" data-target="current-temp">Edit</button>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Temperature Range:</span>
+                    <span class="setting-value">18°C - 22°C</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Humidity:</span>
+                    <span class="setting-value">65%</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Ventilation:</span>
+                    <label class="switch">
+                        <input type="checkbox" checked id="ventilation-toggle">
+                        <span class="toggle"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Fan Speed:</span>
+                    <input type="range" min="0" max="100" value="60" class="slider" id="fan-speed">
+                </div>
+                <div class="alert alert-warning" id="climate-alert">
+                    <strong>Notice:</strong> Humidity level is higher than recommended.
+                </div>
+                <div class="button-group">
+                    <button class="button button-primary" id="reset-climate">Reset to Default</button>
+                    <button class="button button-secondary" id="schedule-changes">Schedule Changes</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Milking System</h2>
+                    <span class="status status-active">Active</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Next Scheduled Milking:</span>
+                    <span class="setting-value">05:00 PM</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Last Maintenance:</span>
+                    <span class="setting-value">May 13, 2025</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">System Pressure:</span>
+                    <span class="setting-value">42 kPa</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Auto-cleaning:</span>
+                    <label class="switch">
+                        <input type="checkbox" checked id="auto-cleaning-toggle">
+                        <span class="toggle"></span>
+                    </label>
+                </div>
+                <div class="chart-container">
+                    <h3>Daily Milk Production</h3>
+                    <div class="chart">
+                        <div class="chart-bar" style="height: 60%;" title="Mon: 2300L"></div>
+                        <div class="chart-bar" style="height: 70%;" title="Tue: 2400L"></div>
+                        <div class="chart-bar" style="height: 65%;" title="Wed: 2350L"></div>
+                        <div class="chart-bar" style="height: 80%;" title="Thu: 2500L"></div>
+                        <div class="chart-bar" style="height: 75%;" title="Fri: 2450L"></div>
+                        <div class="chart-bar" style="height: 50%;" title="Sat: 2200L"></div>
+                        <div class="chart-bar" style="height: 45%;" title="Sun: 2100L"></div>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="button button-primary" id="start-milking">Start Manual Milking</button>
+                    <button class="button button-secondary" id="system-maintenance">Maintenance</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Feed Management</h2>
+                    <span class="status status-warning">Warning</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Current Stock:</span>
+                    <span class="setting-value">18.5 tons</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Daily Usage:</span>
+                    <span class="setting-value">4.2 tons</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Feed Quality:</span>
+                    <span class="setting-value">92%</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Auto-ordering:</span>
+                    <label class="switch">
+                        <input type="checkbox" checked id="auto-ordering-toggle">
+                        <span class="toggle"></span>
+                    </label>
+                </div>
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> Feed stock low. Automatic order placed for delivery in 3 days.
+                </div>
+                <div class="chart-container">
+                    <h3>Feed Trends</h3>
+                    <canvas id="feedTrendsChart" height="200"></canvas>
+                </div>
+                <div class="button-group">
+                    <button class="button button-primary" id="order-feed">Order Feed</button>
+                    <button class="button button-secondary" id="adjust-feed-mix">Adjust Mix</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Milk Quality</h2>
+                    <span class="status status-active">Good</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Fat Content:</span>
+                    <span class="setting-value">3.8%</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Protein:</span>
+                    <span class="setting-value">3.2%</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Bacteria Count:</span>
+                    <span class="setting-value">15,000 CFU/ml</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Somatic Cell Count:</span>
+                    <span class="setting-value">180,000 cells/ml</span>
+                </div>
+                <div class="chart-container">
+                    <h3>Quality Trends</h3>
+                    <canvas id="milkQualityChart" height="200"></canvas>
+                </div>
+                <div class="button-group">
+                    <button class="button button-primary" id="request-testing">Request Testing</button>
+                    <button class="button button-secondary" id="view-quality-history">View History</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Equipment Status</h2>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Milking Machines:</span>
+                    <span class="status status-active">Operational</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Cooling System:</span>
+                    <span class="status status-active">Operational</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Feeding System:</span>
+                    <span class="status status-warning">Maintenance Due</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Climate Control:</span>
+                    <span class="status status-active">Operational</span>
+                </div>
+                <div class="button-group">
+                    <button class="button button-primary" id="run-diagnostics">Run Diagnostics</button>
+                    <button class="button button-secondary" id="schedule-maintenance">Schedule Maintenance</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Staff Management</h2>
+                </div>
+                <div class="farm-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Total Staff</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">10</div>
+                        <div class="stat-label">On Duty</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">2</div>
+                        <div class="stat-label">On Leave</div>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Shift Schedule:</span>
+                    <span class="setting-value">Morning: 6, Evening: 4</span>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Next Training:</span>
+                    <span class="setting-value">May 20, 2025</span>
+                </div>
+                <div class="button-group">
+                    <button class="button button-primary" id="manage-staff">Manage Staff</button>
+                    <button class="button button-secondary" id="schedule-shift">Schedule Shift</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="new-cow-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Cow</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cow ID</label>
+                <input type="text" class="form-input" id="cow-id" placeholder="Enter cow ID">
+                <div class="form-error" id="cow-id-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date of Birth</label>
+                <input type="date" class="form-input" id="cow-dob">
+                <div class="form-error" id="cow-dob-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Breed</label>
+                <select class="form-select" id="cow-breed">
+                    <option value="">Select Breed</option>
+                    <option value="Holstein">Holstein</option>
+                    <option value="Jersey">Jersey</option>
+                    <option value="Brown Swiss">Brown Swiss</option>
+                </select>
+                <div class="form-error" id="cow-breed-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="submit-new-cow" disabled>Add Cow</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="report-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title">Daily Farm Report</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="report-section">
+                <h4 class="report-title">Production Summary</h4>
+                <div class="report-data">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Today</th>
+                                <th>Yesterday</th>
+                                <th>7-Day Avg</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Milk Production</td>
+                                <td>2,450 L</td>
+                                <td>2,500 L</td>
+                                <td>2,380 L</td>
+                            </tr>
+                            <tr>
+                                <td>Feed Consumption</td>
+                                <td>4.2 tons</td>
+                                <td>4.1 tons</td>
+                                <td>4.15 tons</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Close</button>
+                <button class="button button-primary" id="download-report">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="system-check-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">System Check</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="report-section">
+                <h4 class="report-title">System Status</h4>
+                <div class="report-data" id="system-check-results">
+                    <p>Running system check...</p>
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="emergency-stop-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Emergency Stop</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <p>Are you sure you want to initiate an emergency stop?</p>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-warning" id="confirm-emergency-stop">Confirm Stop</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="all-settings-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title">All Settings</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Farm Name</label>
+                <input type="text" class="form-input" id="farm-name" value="Sunny Acres Dairy">
+                <div class="form-error" id="farm-name-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Default Temperature Range (°C)</label>
+                <input type="text" class="form-input" id="temp-range" value="18-22">
+                <div class="form-error" id="temp-range-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="save-settings" disabled>Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="reset-climate-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Reset Climate Settings</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <p>Are you sure you want to reset climate settings to default values?</p>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary" id="confirm-reset-climate">Confirm Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="schedule-changes-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Schedule Climate Changes</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Temperature (°C)</label>
+                <input type="number" class="form-input" id="schedule-temp" placeholder="Enter temperature">
+                <div class="form-error" id="schedule-temp-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Schedule Time</label>
+                <input type="datetime-local" class="form-input" id="schedule-time">
+                <div class="form-error" id="schedule-time-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="confirm-schedule-changes" disabled>Schedule</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="start-milking-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Start Manual Milking</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <p>Are you sure you want to start manual milking now?</p>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary" id="confirm-start-milking">Start Milking</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="system-maintenance-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Schedule Maintenance</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Maintenance Date</label>
+                <input type="date" class="form-input" id="maintenance-date">
+                <div class="form-error" id="maintenance-date-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea class="form-input" id="maintenance-notes" placeholder="Any notes"></textarea>
+                <div class="form-error" id="maintenance-notes-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="confirm-maintenance" disabled>Schedule</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="order-feed-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Order Feed</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Quantity (tons)</label>
+                <input type="number" class="form-input" id="feed-quantity" placeholder="Enter quantity">
+                <div class="form-error" id="feed-quantity-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Supplier</label>
+                <select class="form-select" id="feed-supplier">
+                    <option value="">Select Supplier</option>
+                    <option value="Supplier A">Supplier A</option>
+                    <option value="Supplier B">Supplier B</option>
+                </select>
+                <div class="form-error" id="feed-supplier-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="confirm-order-feed" disabled>Place Order</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="adjust-feed-mix-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Adjust Feed Mix</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Grain (%)</label>
+                <input type="number" class="form-input" id="feed-grain" placeholder="Enter percentage">
+                <div class="form-error" id="feed-grain-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Silage (%)</label>
+                <input type="number" class="form-input" id="feed-silage" placeholder="Enter percentage">
+                <div class="form-error" id="feed-silage-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="confirm-feed-mix" disabled>Apply Mix</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="request-testing-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Request Milk Testing</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Test Type</label>
+                <select class="form-select" id="test-type">
+                    <option value="">Select Test Type</option>
+                    <option value="Bacteria Count">Bacteria Count</option>
+                    <option value="Somatic Cell Count">Somatic Cell Count</option>
+                    <option value="Full Analysis">Full Analysis</option>
+                </select>
+                <div class="form-error" id="test-type-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Sample Date</label>
+                <input type="date" class="form-input" id="test-date">
+                <div class="form-error" id="test-date-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="confirm-testing" disabled>Submit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="view-quality-history-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title">Milk Quality History</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="report-section">
+                <h4 class="report-title">Quality Metrics Over Time</h4>
+                <div class="report-data">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Fat Content</th>
+                                <th>Protein</th>
+                                <th>Bacteria Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>May 15, 2025</td>
+                                <td>3.8%</td>
+                                <td>3.2%</td>
+                                <td>15,000 CFU/ml</td>
+                            </tr>
+                            <tr>
+                                <td>May 14, 2025</td>
+                                <td>3.7%</td>
+                                <td>3.1%</td>
+                                <td>16,000 CFU/ml</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="run-diagnostics-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Run Diagnostics</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="report-section">
+                <h4 class="report-title">Diagnostics Results</h4>
+                <div class="report-data" id="diagnostics-results">
+                    <p>Running diagnostics...</p>
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="schedule-maintenance-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Schedule Equipment Maintenance</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Equipment</label>
+                <select class="form-select" id="maintenance-equipment">
+                    <option value="">Select Equipment</option>
+                    <option value="Milking Machines">Milking Machines</option>
+                    <option value="Feeding System">Feeding System</option>
+                    <option value="Cooling System">Cooling System</option>
+                </select>
+                <div class="form-error" id="maintenance-equipment-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Maintenance Date</label>
+                <input type="date" class="form-input" id="equipment-maintenance-date">
+                <div class="form-error" id="equipment-maintenance-date-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="confirm-equipment-maintenance" disabled>Schedule</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="manage-staff-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title">Manage Staff</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="report-section">
+                <h4 class="report-title">Staff List</h4>
+                <div class="report-data">
+                    <table class="data-table" id="staff-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Shift</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-primary" id="add-staff">Add New Staff</button>
+                <button class="button button-secondary close-modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="schedule-shift-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Schedule Shift</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Staff Member</label>
+                <select class="form-select" id="shift-staff">
+                    <option value="">Select Staff</option>
+                    <option value="John Doe">John Doe</option>
+                    <option value="Jane Smith">Jane Smith</option>
+                </select>
+                <div class="form-error" id="shift-staff-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Shift Date</label>
+                <input type="date" class="form-input" id="shift-date">
+                <div class="form-error" id="shift-date-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Shift Type</label>
+                <select class="form-select" id="shift-type">
+                    <option value="">Select Shift Type</option>
+                    <option value="Morning">Morning</option>
+                    <option value="Evening">Evening</option>
+                    <option value="Night">Night</option>
+                </select>
+                <div class="form-error" id="shift-type-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="confirm-schedule-shift" disabled>Schedule</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="add-staff-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Staff</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-input" id="staff-name" placeholder="Enter name">
+                <div class="form-error" id="staff-name-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <select class="form-select" id="staff-role">
+                    <option value="">Select Role</option>
+                    <option value="Farm Manager">Farm Manager</option>
+                    <option value="Milking Technician">Milking Technician</option>
+                    <option value="Feed Specialist">Feed Specialist</option>
+                </select>
+                <div class="form-error" id="staff-role-error"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Shift</label>
+                <select class="form-select" id="staff-shift">
+                    <option value="">Select Shift</option>
+                    <option value="Morning">Morning</option>
+                    <option value="Evening">Evening</option>
+                    <option value="Night">Night</option>
+                </select>
+                <div class="form-error" id="staff-shift-error"></div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-secondary close-modal">Cancel</button>
+                <button class="button button-primary disabled" id="submit-new-staff" disabled>Add Staff</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulated staff data
+        let staff = [
+            { name: "John Doe", role: "Farm Manager", status: "On Duty", shift: "Morning" },
+            { name: "Jane Smith", role: "Milking Technician", status: "On Leave", shift: "-" }
+        ];
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            updateClock();
+            setInterval(updateClock, 1000);
+            initializeCharts();
+            setupEventListeners();
+            setupFormValidations();
+            updateStaffTable();
+            updateStaffStats();
+        });
+
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const options = {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+                timeZone: 'Asia/Kolkata'
+            };
+            document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', options);
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // Milk Quality Chart
+            const milkCtx = document.getElementById('milkQualityChart').getContext('2d');
+            new Chart(milkCtx, {
+                type: 'line',
+                data: {
+                    labels: ['May 10', 'May 11', 'May 12', 'May 13', 'May 14', 'May 15'],
+                    datasets: [
+                        {
+                            label: 'Fat Content (%)',
+                            data: [3.6, 3.7, 3.8, 3.7, 3.8, 3.8],
+                            borderColor: '#3498db',
+                            fill: false
+                        },
+                        {
+                            label: 'Protein (%)',
+                            data: [3.0, 3.1, 3.2, 3.1, 3.2, 3.2],
+                            borderColor: '#2ecc71',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    }
+                }
+            });
+
+            // Feed Trends Chart
+            const feedCtx = document.getElementById('feedTrendsChart').getContext('2d');
+            new Chart(feedCtx, {
+                type: 'line',
+                data: {
+                    labels: ['May 10', 'May 11', 'May 12', 'May 13', 'May 14', 'May 15'],
+                    datasets: [
+                        {
+                            label: 'Stock (tons)',
+                            data: [20.5, 19.8, 19.2, 18.8, 18.5, 18.5],
+                            borderColor: '#3498db',
+                            fill: false
+                        },
+                        {
+                            label: 'Daily Usage (tons)',
+                            data: [4.1, 4.2, 4.0, 4.3, 4.2, 4.2],
+                            borderColor: '#2ecc71',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 25
+                        }
+                    }
+                }
+            });
+        }
+
+        // Validation function with real-time error display
+        function validateField(field, value, modalId) {
+            let isValid = true;
+            let errorMessage = '';
+            const errorElement = document.getElementById(`${field.id}-error`);
+
+            switch (field.id) {
+                case 'cow-id':
+                    if (!value || !/^[A-Za-z0-9]+$/.test(value)) {
+                        isValid = false;
+                        errorMessage = 'Cow ID must be non-empty and alphanumeric';
+                    }
+                    break;
+                case 'cow-dob':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Date of birth is required';
+                    } else {
+                        const dob = new Date(value);
+                        const today = new Date();
+                        if (dob >= today) {
+                            isValid = false;
+                            errorMessage = 'Date of birth must be in the past';
+                        }
+                    }
+                    break;
+                case 'cow-breed':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Breed is required';
+                    }
+                    break;
+                case 'farm-name':
+                    if (!value.trim()) {
+                        isValid = false;
+                        errorMessage = 'Farm name is required';
+                    }
+                    break;
+                case 'temp-range':
+                    if (!value.match(/^\d{1,2}-\d{1,2}$/)) {
+                        isValid = false;
+                        errorMessage = 'Temperature range must be in format "min-max" (e.g., 18-22)';
+                    } else {
+                        const [min, max] = value.split('-').map(Number);
+                        if (min < 10 || max > 30 || min >= max) {
+                            isValid = false;
+                            errorMessage = 'Temperature range must be between 10-30°C with min < max';
+                        }
+                    }
+                    break;
+                case 'schedule-temp':
+                    if (!value || value < 10 || value > 30) {
+                        isValid = false;
+                        errorMessage = 'Temperature must be between 10°C and 30°C';
+                    }
+                    break;
+                case 'schedule-time':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Schedule time is required';
+                    } else {
+                        const scheduleTime = new Date(value);
+                        const now = new Date();
+                        if (scheduleTime <= now) {
+                            isValid = false;
+                            errorMessage = 'Schedule time must be in the future';
+                        }
+                    }
+                    break;
+                case 'maintenance-date':
+                case 'equipment-maintenance-date':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Maintenance date is required';
+                    } else {
+                        const date = new Date(value);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        if (date <= today) {
+                            isValid = false;
+                            errorMessage = 'Maintenance date must be in the future';
+                        }
+                    }
+                    break;
+                case 'maintenance-notes':
+                    // Optional field, no validation required
+                    isValid = true;
+                    break;
+                case 'feed-quantity':
+                    if (!value || value < 0.1 || value > 100) {
+                        isValid = false;
+                        errorMessage = 'Quantity must be between 0.1 and 100 tons';
+                    }
+                    break;
+                case 'feed-supplier':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Supplier is required';
+                    }
+                    break;
+                case 'feed-grain':
+                case 'feed-silage':
+                    if (!value || value < 0 || value > 100) {
+                        isValid = false;
+                        errorMessage = `${field.id === 'feed-grain' ? 'Grain' : 'Silage'} percentage must be between 0 and 100`;
+                    } else {
+                        const grain = parseFloat(document.getElementById('feed-grain').value) || 0;
+                        const silage = parseFloat(document.getElementById('feed-silage').value) || 0;
+                        if (grain + silage !== 100 && modalId === 'adjust-feed-mix-modal') {
+                            isValid = false;
+                            errorMessage = 'Grain and silage percentages must sum to 100%';
+                        }
+                    }
+                    break;
+                case 'test-type':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Test type is required';
+                    }
+                    break;
+                case 'test-date':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Sample date is required';
+                    } else {
+                        const date = new Date(value);
+                        const today = new Date();
+                        today.setHours(23, 59, 59, 999);
+                        if (date > today) {
+                            isValid = false;
+                            errorMessage = 'Sample date must be today or in the past';
+                        }
+                    }
+                    break;
+                case 'maintenance-equipment':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Equipment is required';
+                    }
+                    break;
+                case 'shift-staff':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Staff member is required';
+                    }
+                    break;
+                case 'shift-date':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Shift date is required';
+                    } else {
+                        const date = new Date(value);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        if (date < today) {
+                            isValid = false;
+                            errorMessage = 'Shift date must be today or in the future';
+                        }
+                    }
+                    break;
+                case 'shift-type':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = 'Shift type is required';
+                    }
+                    break;
+                case 'staff-name':
+                    if (!value || !/^[A-Za-z\s]+$/.test(value)) {
+                        isValid = false;
+                        errorMessage = 'Name must contain only letters and spaces';
+                    }
+                    break;
+                case 'staff-role':
+                case 'staff-shift':
+                    if (!value) {
+                        isValid = false;
+                        errorMessage = `${field.id === 'staff-role' ? 'Role' : 'Shift'} is required`;
+                    }
+                    break;
+            }
+
+            field.classList.toggle('invalid', !isValid);
+            if (errorElement) {
+                errorElement.textContent = errorMessage;
+                errorElement.classList.toggle('visible', !isValid);
+            }
+
+            return isValid;
+        }
+
+        // Validate entire form
+        function validateForm(modalId) {
+            const modal = document.getElementById(modalId);
+            const inputs = modal.querySelectorAll('.form-input, .form-select');
+            const submitButton = modal.querySelector('.button-primary:not(.close-modal)');
+            let allValid = true;
+
+            inputs.forEach(input => {
+                if (!validateField(input, input.value, modalId)) {
+                    allValid = false;
+                }
+            });
+
+            if (submitButton) {
+                submitButton.classList.toggle('disabled', !allValid);
+                submitButton.disabled = !allValid;
+            }
+
+            return allValid;
+        }
+
+        // Setup form validations
+        function setupFormValidations() {
+            const modals = [
+                'new-cow-modal',
+                'all-settings-modal',
+                'schedule-changes-modal',
+                'system-maintenance-modal',
+                'order-feed-modal',
+                'adjust-feed-mix-modal',
+                'request-testing-modal',
+                'schedule-maintenance-modal',
+                'schedule-shift-modal',
+                'add-staff-modal'
+            ];
+
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    const inputs = modal.querySelectorAll('.form-input, .form-select');
+                    inputs.forEach(input => {
+                        input.addEventListener('input', () => {
+                            validateField(input, input.value, modalId);
+                            validateForm(modalId);
+                        });
+                    });
+
+                    // Validate on modal open
+                    modal.addEventListener('transitionend', () => {
+                        if (modal.style.display === 'flex') {
+                            validateForm(modalId);
+                        }
+                    });
+                }
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Quick action buttons
+            const quickActions = {
+                'run-system-check': 'system-check-modal',
+                'emergency-stop': 'emergency-stop-modal',
+                'generate-report': 'report-modal',
+                'add-new-cow': 'new-cow-modal',
+                'view-all-settings': 'all-settings-modal'
+            };
+            Object.keys(quickActions).forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.addEventListener('click', () => showModal(quickActions[id]));
+            });
+
+            // Card-specific buttons
+            const cardButtons = {
+                'reset-climate': 'reset-climate-modal',
+                'schedule-changes': 'schedule-changes-modal',
+                'start-milking': 'start-milking-modal',
+                'system-maintenance': 'system-maintenance-modal',
+                'order-feed': 'order-feed-modal',
+                'adjust-feed-mix': 'adjust-feed-mix-modal',
+                'request-testing': 'request-testing-modal',
+                'view-quality-history': 'view-quality-history-modal',
+                'run-diagnostics': 'run-diagnostics-modal',
+                'schedule-maintenance': 'schedule-maintenance-modal',
+                'manage-staff': 'manage-staff-modal',
+                'schedule-shift': 'schedule-shift-modal'
+            };
+            Object.keys(cardButtons).forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.addEventListener('click', () => showModal(cardButtons[id]));
+            });
+
+            // Modal-specific buttons
+            const modalButtons = {
+                'submit-new-cow': handleSubmitNewCow,
+                'confirm-emergency-stop': handleConfirmEmergencyStop,
+                'save-settings': handleSaveSettings,
+                'confirm-reset-climate': handleConfirmResetClimate,
+                'confirm-schedule-changes': handleConfirmScheduleChanges,
+                'confirm-start-milking': handleConfirmStartMilking,
+                'confirm-maintenance': handleConfirmMaintenance,
+                'confirm-order-feed': handleConfirmOrderFeed,
+                'confirm-feed-mix': handleConfirmFeedMix,
+                'confirm-equipment-maintenance': handleConfirmEquipmentMaintenance,
+                'confirm-schedule-shift': handleConfirmScheduleShift,
+                'submit-new-staff': handleSubmitNewStaff,
+                'add-staff': () => showModal('add-staff-modal'),
+                'download-report': handleDownloadReport,
+                'confirm-testing': handleConfirmTesting
+            };
+            Object.keys(modalButtons).forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.addEventListener('click', modalButtons[id]);
+            });
+
+            // Modal close buttons
+            document.querySelectorAll('.close-modal').forEach(button => {
+                button.addEventListener('click', () => {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        closeModal(modal.id);
+                        // Reset form fields and validation
+                        const inputs = modal.querySelectorAll('.form-input, .form-select');
+                        inputs.forEach(input => {
+                            input.classList.remove('invalid');
+                            const errorElement = document.getElementById(`${input.id}-error`);
+                            if (errorElement) errorElement.classList.remove('visible');
+                            if (input.type !== 'select-one' && input.id !== 'farm-name' && input.id !== 'temp-range') {
+                                input.value = '';
+                            }
+                        });
+                        const submitButton = modal.querySelector('.button-primary:not(.close-modal)');
+                        if (submitButton) {
+                            submitButton.classList.add('disabled');
+                            submitButton.disabled = true;
+                        }
+                    }
+                });
+            });
+
+            // Editable fields
+            document.querySelectorAll('.edit-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.dataset.target;
+                    const valueSpan = document.getElementById(targetId);
+                    const currentValue = valueSpan.textContent.replace('°C', '');
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.value = currentValue;
+                    input.className = 'inline-edit';
+                    valueSpan.textContent = '';
+                    valueSpan.appendChild(input);
+                    input.focus();
+                    input.addEventListener('blur', () => {
+                        const newValue = parseFloat(input.value);
+                        if (newValue >= 10 && newValue <= 30) {
+                            valueSpan.textContent = `${newValue}°C`;
+                        } else {
+                            input.classList.add('invalid');
+                            valueSpan.textContent = `${currentValue}°C`;
+                        }
+                    });
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') input.blur();
+                    });
+                });
+            });
+        }
+
+        // Show modal
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+                if (modalId === 'system-check-modal') {
+                    simulateSystemCheck();
+                } else if (modalId === 'run-diagnostics-modal') {
+                    simulateDiagnostics();
+                }
+            }
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Simulate system check
+        function simulateSystemCheck() {
+            const results = document.getElementById('system-check-results');
+            if (results) {
+                setTimeout(() => {
+                    results.innerHTML = `
+                        <p>Milking System: <span class="status status-active">Operational</span></p>
+                        <p>Cooling System: <span class="status status-active">Operational</span></p>
+                        <p>Feeding System: <span class="status status-warning">Maintenance Due</span></p>
+                    `;
+                }, 2000);
+            }
+        }
+
+        // Simulate diagnostics
+        function simulateDiagnostics() {
+            const results = document.getElementById('diagnostics-results');
+            if (results) {
+                setTimeout(() => {
+                    results.innerHTML = `
+                        <p>Diagnostic scan completed</p>
+                        <p>All systems within normal parameters</p>
+                    `;
+                }, 2000);
+            }
+        }
+
+        // Handle download report
+        function handleDownloadReport() {
+            const reportContent = `
+                Daily Farm Report - ${new Date().toLocaleDateString('en-US')}
+                ----------------------------------------
+                Production Summary
+                Metric        | Today    | Yesterday | 7-Day Avg
+                --------------|----------|-----------|----------
+                Milk Production | 2,450 L  | 2,500 L   | 2,380 L
+                Feed Consumption| 4.2 tons | 4.1 tons  | 4.15 tons
+            `;
+            const blob = new Blob([reportContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'daily_farm_report.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            closeModal('report-modal');
+        }
+
+        // Handle confirm testing
+        function handleConfirmTesting() {
+            if (!validateForm('request-testing-modal')) return;
+            const testType = document.getElementById('test-type').value;
+            const testDate = document.getElementById('test-date').value;
+            alert(`Milk testing requested: ${testType} for sample date ${testDate}`);
+            closeModal('request-testing-modal');
+        }
+
+        // Form handlers
+        function handleSubmitNewCow() {
+            if (!validateForm('new-cow-modal')) return;
+            closeModal('new-cow-modal');
+        }
+
+        function handleConfirmEmergencyStop() {
+            closeModal('emergency-stop-modal');
+        }
+
+        function handleSaveSettings() {
+            if (!validateForm('all-settings-modal')) return;
+            closeModal('all-settings-modal');
+        }
+
+        function handleConfirmResetClimate() {
+            closeModal('reset-climate-modal');
+        }
+
+        function handleConfirmScheduleChanges() {
+            if (!validateForm('schedule-changes-modal')) return;
+            closeModal('schedule-changes-modal');
+        }
+
+        function handleConfirmStartMilking() {
+            closeModal('start-milking-modal');
+        }
+
+        function handleConfirmMaintenance() {
+            if (!validateForm('system-maintenance-modal')) return;
+            closeModal('system-maintenance-modal');
+        }
+
+        function handleConfirmOrderFeed() {
+            if (!validateForm('order-feed-modal')) return;
+            closeModal('order-feed-modal');
+        }
+
+        function handleConfirmFeedMix() {
+            if (!validateForm('adjust-feed-mix-modal')) return;
+            closeModal('adjust-feed-mix-modal');
+        }
+
+        function handleConfirmEquipmentMaintenance() {
+            if (!validateForm('schedule-maintenance-modal')) return;
+            closeModal('schedule-maintenance-modal');
+        }
+
+        function handleConfirmScheduleShift() {
+            if (!validateForm('schedule-shift-modal')) return;
+            closeModal('schedule-shift-modal');
+        }
+
+        function handleSubmitNewStaff() {
+            if (!validateForm('add-staff-modal')) return;
+            const name = document.getElementById('staff-name').value;
+            const role = document.getElementById('staff-role').value;
+            const shift = document.getElementById('staff-shift').value;
+            staff.push({
+                name,
+                role,
+                status: 'On Duty',
+                shift
+            });
+            updateStaffTable();
+            updateStaffStats();
+            closeModal('add-staff-modal');
+        }
+
+        // Update staff table
+        function updateStaffTable() {
+            const tbody = document.querySelector('#staff-table tbody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                staff.forEach(member => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${member.name}</td>
+                        <td>${member.role}</td>
+                        <td>${member.status}</td>
+                        <td>${member.shift}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        // Update staff stats
+        function updateStaffStats() {
+            const totalStaff = staff.length;
+            const onDuty = staff.filter(s => s.status === 'On Duty').length;
+            const onLeave = staff.filter(s => s.status === 'On Leave').length;
+            const stats = document.querySelectorAll('.stat-item .stat-value');
+            if (stats.length >= 3) {
+                stats[0].textContent = totalStaff;
+                stats[1].textContent = onDuty;
+                stats[2].textContent = onLeave;
+            }
+        }
+    </script>
+</body>
+</html>

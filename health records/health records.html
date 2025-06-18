@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dairy Farm Health Records</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --primary: #5D8AA8;
+            --primary-light: #e8f5e9;
+            --secondary: #6bb5d8;
+            --warning: #ffb74d;
+            --danger: #ef9a9a;
+            --light: #fcfcfc;
+            --dark: #455a64;
+            --grey: #eceff1;
+            --total-color: #b39ddb;
+            --healthy-color: #5D8AA8;
+            --sick-color: #f48fb1;
+            --treatment-color: #90caf9;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #5D8AA8, #5D8AA8);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            padding: 1.2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-header {
+            border-bottom: 1px solid var(--grey);
+            padding-bottom: 0.8rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h2 {
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        
+        .card-body {
+            margin-bottom: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--grey);
+        }
+        
+        .card-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .card-body::-webkit-scrollbar-track {
+            background: var(--grey);
+            border-radius: 4px;
+        }
+        
+        .card-body::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 4px;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #6aa079;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a9eba;
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #ffa726;
+            transform: translateY(-2px);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(120, 179, 135, 0.2);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table th, table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--grey);
+        }
+        
+        table th {
+            background-color: var(--primary-light);
+            color: var(--dark);
+            font-weight: 600;
+        }
+        
+        table tbody tr:hover {
+            background-color: rgba(120, 179, 135, 0.05);
+        }
+        
+        .alert {
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #3c763d;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .alert-warning {
+            background-color: #fff3e0;
+            color: #8a6d3b;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            padding: 1.2rem;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 120px;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card .icon-circle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #5D8AA8, #6bb5d8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card .content {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+        
+        .stat-card h3 {
+            font-size: 1.8rem;
+            margin: 0;
+            color: #455a64;
+        }
+        
+        .stat-card p {
+            color: #546e7a;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        .stat-card .change {
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+        
+        .stat-card .change.positive {
+            color: #4caf50;
+        }
+        
+        .stat-card .change.negative {
+            color: #ef5350;
+        }
+        
+        .healthy {
+            color: var(--healthy-color);
+        }
+        
+        .sick {
+            color: var(--sick-color);
+        }
+        
+        .treatment {
+            color: var(--treatment-color);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--grey);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--primary-light);
+        }
+        
+        .modal-header h2 {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+        
+        .modal-body {
+            padding: 1rem;
+            overflow-y: auto;
+            max-height: calc(90vh - 120px);
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--grey);
+        }
+        
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .modal-body::-webkit-scrollbar-track {
+            background: var(--grey);
+            border-radius: 4px;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 4px;
+        }
+        
+        .modal-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--grey);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            background-color: var(--light);
+        }
+        
+        .close {
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--dark);
+            transition: color 0.3s ease;
+        }
+        
+        .close:hover {
+            color: var(--danger);
+        }
+        
+        .milk-production-chart {
+            height: 250px;
+            margin-top: 1rem;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            padding: 1rem;
+            border: 1px dashed #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .chart-container {
+            width: 220px;
+            height: 220px;
+        }
+        
+        .vaccination-status {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        
+        .vaccination-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .dot-complete {
+            background-color: var(--healthy-color);
+        }
+        
+        .dot-due {
+            background-color: var(--warning);
+        }
+        
+        .feeding-schedule {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-btn {
+            padding: 0.4rem 0.8rem;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-btn.active {
+            background-color: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.3rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            background: none;
+            border: none;
+            color: var(--secondary);
+        }
+        
+        .action-btn:hover {
+            color: var(--primary);
+        }
+        
+        .view-icon {
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--secondary);
+            background: none;
+            border: none;
+            padding: 0.3rem;
+        }
+        
+        .view-icon:hover {
+            color: var(--primary);
+        }
+        
+        .quick-filters {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .search-container {
+            position: relative;
+            flex-grow: 1;
+            max-width: 300px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem 0.5rem 2rem;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .tab-container {
+            margin-bottom: 1rem;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+            padding-top: 1rem;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .notification-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .notification-header {
+            padding: 0.75rem;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .notification-body {
+            padding: 0.5rem;
+        }
+        
+        .notification-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .notification-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .notification-time {
+            font-size: 0.7rem;
+            color: #999;
+            margin-top: 0.25rem;
+        }
+        
+        .notification-bell {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #5D8AA8, #6bb5d8);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .timeline {
+            position: relative;
+            margin: 20px 0;
+            padding-left: 30px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #ddd;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .timeline-dot {
+            position: absolute;
+            left: -30px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+        
+        .timeline-content {
+            background-color: #f9f9f9;
+            padding: 1rem;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .timeline-date {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: white;
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            z-index: 1100;
+            animation: slideIn 0.3s ease forwards, fadeOut 0.5s ease 2.5s forwards;
+            max-width: 350px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        .toast-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .modal-content {
+                width: 95%;
+                max-height: 95vh;
+            }
+            
+            .modal-body {
+                max-height: calc(95vh - 120px);
+            }
+            
+            .btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .card-header button {
+                width: 100%;
+            }
+            
+            table {
+                font-size: 0.9rem;
+            }
+            
+            .modal-content {
+                width: 98%;
+            }
+            .error-message {
+                color: #d32f2f;
+                font-size: 12px;
+                margin-top: 5px;
+                display: block;
+            }
+            .form-control.invalid {
+                border-color: #d32f2f;
+                background-color: #fff3f3;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Dairy Farm Health Records</h1>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="icon-circle"><i class="fas fa-users"></i></div>
+                <div class="content">
+                    <div>
+                        <p>Total Buffaloes</p>
+                        <h3 id="total-count">24</h3>
+                    </div>
+                    <div class="change positive"><i class="fas fa-arrow-up"></i> 8.2% from last week</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon-circle"><i class="fas fa-heartbeat"></i></div>
+                <div class="content">
+                    <div>
+                        <p>Healthy</p>
+                        <h3 id="healthy-count" class="healthy">20</h3>
+                    </div>
+                    <div class="change positive"><i class="fas fa-arrow-up"></i> 3.4% from last month</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon-circle"><i class="fas fa-viruses"></i></div>
+                <div class="content">
+                    <div>
+                        <p>Sick</p>
+                        <h3 id="sick-count" class="sick">2</h3>
+                    </div>
+                    <div class="change positive"><i class="fas fa-arrow-up"></i> 2.1% from last week</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon-circle"><i class="fas fa-medkit"></i></div>
+                <div class="content">
+                    <div>
+                        <p>Under Treatment</p>
+                        <h3 id="treatment-count" class="treatment">2</h3>
+                    </div>
+                    <div class="change negative"><i class="fas fa-arrow-down"></i> 1.3% from last week</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Health Reports</h2>
+                    <button id="add-health-record" class="btn btn-primary">Add New</button>
+                </div>
+                <div class="quick-filters">
+                    <div class="filters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                    </div>
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search by ID or name...">
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        Today's health check completed: 24/24 buffaloes
+                    </div>
+                    <table id="health-records-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Animal</th>
+                                <th>Last Check</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>B001</td>
+                                <td>Lakshmi</td>
+                                <td>Today, 8:30 AM</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="view-icon view-record" data-id="B001"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit-record" data-id="B001">Edit</button>
+                                        <button class="action-btn delete-record" data-id="B001">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>B002</td>
+                                <td>Ganga</td>
+                                <td>Today, 9:15 AM</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="view-icon view-record" data-id="B002"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit-record" data-id="B002">Edit</button>
+                                        <button class="action-btn delete-record" data-id="B002">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>B003</td>
+                                <td>Saraswati</td>
+                                <td>Today, 8:45 AM</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="view-icon view-record" data-id="B003"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit-record" data-id="B003">Edit</button>
+                                        <button class="action-btn delete-record" data-id="B003">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>B004</td>
+                                <td>Durga</td>
+                                <td>Today, 9:30 AM</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="view-icon view-record" data-id="B004"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit-record" data-id="B004">Edit</button>
+                                        <button class="action-btn delete-record" data-id="B004">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>B005</td>
+                                <td>Parvati</td>
+                                <td>Today, 10:00 AM</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="view-icon view-record" data-id="B005"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit-record" data-id="B005">Edit</button>
+                                        <button class="action-btn delete-record" data-id="B005">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>B006</td>
+                                <td>Yamuna</td>
+                                <td>Today, 10:15 AM</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="view-icon view-record" data-id="B006"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit-record" data-id="B006">Edit</button>
+                                        <button class="action-btn delete-record" data-id="B006">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Milk Production</h2>
+                    <button id="view-full-report" class="btn btn-secondary">View Report</button>
+                </div>
+                <div class="card-body">
+                    <div class="tab-container">
+                        <div class="tabs">
+                            <div class="tab active" data-tab="daily">Daily</div>
+                            <div class="tab" data-tab="weekly">Weekly</div>
+                            <div class="tab" data-tab="monthly">Monthly</div>
+                        </div>
+                        <div class="tab-content active" id="daily-tab">
+                            <div class="milk-production-chart">
+                                <div class="chart-container">
+                                    <canvas id="daily-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="stat-box" style="margin-top: 1rem;">
+                                <div class="stat-title">Today's Production</div>
+                                <div class="stat-value">348 Liters</div>
+                            </div>
+                        </div>
+                        <div class="tab-content" id="weekly-tab">
+                            <div class="milk-production-chart">
+                                <div class="chart-container">
+                                    <canvas id="weekly-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="stat-box" style="margin-top: 1rem;">
+                                <div class="stat-title">Weekly Production</div>
+                                <div class="stat-value">2,436 Liters</div>
+                            </div>
+                        </div>
+                        <div class="tab-content" id="monthly-tab">
+                            <div class="milk-production-chart">
+                                <div class="chart-container">
+                                    <canvas id="monthly-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="stat-box" style="margin-top: 1rem;">
+                                <div class="stat-title">Monthly Production</div>
+                                <div class="stat-value">9,745 Liters</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Vaccination Schedule</h2>
+                    <button id="schedule-vaccination" class="btn btn-warning">Schedule New</button>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        3 vaccinations due in the next 7 days
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Animal</th>
+                                <th>Vaccine Type</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>B008</td>
+                                <td>Kamadhenu</td>
+                                <td>FMD Booster</td>
+                                <td>Tomorrow</td>
+                                <td>
+                                    <div class="vaccination-status">
+                                        <span class="vaccination-dot dot-due"></span>
+                                        <span>Due Soon</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>B010</td>
+                                <td>Nandini</td>
+                                <td>Brucellosis</td>
+                                <td>Jun 19, 2025</td>
+                                <td>
+                                    <div class="vaccination-status">
+                                        <span class="vaccination-dot dot-due"></span>
+                                        <span>Due Soon</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>B015</td>
+                                <td>Gomati</td>
+                                <td>HS Vaccine</td>
+                                <td>Jun 15, 2025</td>
+                                <td>
+                                    <div class="vaccination-status">
+                                        <span class="vaccination-dot dot-due"></span>
+                                        <span>Due Soon</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>B007</td>
+                                <td>Kaveri</td>
+                                <td>BQ Vaccine</td>
+                                <td>Jun 10, 2025</td>
+                                <td>
+                                    <div class="vaccination-status">
+                                        <span class="vaccination-dot dot-complete"></span>
+                                        <span>Completed</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>B012</td>
+                                <td>Godavari</td>
+                                <td>Deworming</td>
+                                <td>Jun 1, 2025</td>
+                                <td>
+                                    <div class="vaccination-status">
+                                        <span class="vaccination-dot dot-complete"></span>
+                                        <span>Completed</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Recent Health Events</h2>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-dot">📋</div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">Today, 11:30 AM</div>
+                                <div>B002 (Ganga) received antibiotic treatment for mastitis. Next dose scheduled for tomorrow morning.</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot">🩺</div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">Today, 9:15 AM</div>
+                                <div>B003 (Saraswati) diagnosed with mild fever (39.2°C). Started on antipyretics and monitoring.</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot">💉</div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">Yesterday, 4:30 PM</div>
+                                <div>B007 (Kaveri) completed BQ vaccination. No adverse reactions observed.</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot">🍼</div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">Yesterday, 10:20 AM</div>
+                                <div>B023 (Tungabhadra) gave birth to a healthy female calf. Both mother and calf doing well.</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot">🥛</div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">Jun 10, 2025, 8:45 AM</div>
+                                <div>New record: B006 (Yamuna) produced 22L milk in a single day.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Health Record Modal -->
+    <div id="health-record-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Health Record</h2>
+                <span class="close">×</span>
+            </div>
+            <div class="modal-body">
+                <form id="health-record-form">
+                    <div class="form-group">
+                        <label for="animal-id">Animal ID</label>
+                        <select id="animal-id" class="form-control" required>
+                            <option value="">Select Animal</option>
+                            <option value="B001">B001 - Lakshmi</option>
+                            <option value="B002">B002 - Ganga</option>
+                            <option value="B003">B003 - Saraswati</option>
+                            <option value="B004">B004 - Durga</option>
+                            <option value="B005">B005 - Parvati</option>
+                            <option value="B006">B006 - Yamuna</option>
+                        </select>
+                        <span id="animal-id-error" class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="health-status">Health Status</label>
+                        <select id="health-status" class="form-control" required>
+                            <option value="">Select Status</option>
+                            <option value="healthy">Healthy</option>
+                            <option value="sick">Sick</option>
+                            <option value="treatment">Under Treatment</option>
+                        </select>
+                        <span id="health-status-error" class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="temperature">Temperature (°C)</label>
+                        <input type="number" id="temperature" class="form-control" step="0.1" min="35" max="42">
+                        <span id="temperature-error" class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">Weight (kg)</label>
+                        <input type="number" id="weight" class="form-control" step="1" min="200" max="800">
+                        <span id="weight-error" class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="symptoms">Symptoms/Observations</label>
+                        <textarea id="symptoms" class="form-control" rows="3"></textarea>
+                        <span id="symptoms-error" class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="treatment">Treatment (if any)</label>
+                        <textarea id="treatment" class="form-control" rows="3"></textarea>
+                        <span id="treatment-error" class="error-message"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-health-record">Cancel</button>
+                <button class="btn btn-primary" id="save-health-record">Save Record</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vaccination Schedule Modal -->
+    <div id="vaccination-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Schedule Vaccination</h2>
+                <span class="close">×</span>
+            </div>
+            <div class="modal-body">
+                <form id="vaccination-form">
+                    <div class="form-group">
+                        <label for="vacc-animal-id">Animal ID</label>
+                        <select id="vacc-animal-id" class="form-control" required>
+                            <option value="">Select Animal</option>
+                            <option value="B001">B001 - Lakshmi</option>
+                            <option value="B002">B002 - Ganga</option>
+                            <option value="B003">B003 - Saraswati</option>
+                            <option value="B004">B004 - Durga</option>
+                            <option value="B005">B005 - Parvati</option>
+                            <option value="B006">B006 - Yamuna</option>
+                        </select>
+                        <span id="vacc-animal-id-error" class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="vaccine-type">Vaccine Type</label>
+                        <select id="vaccine-type" class="form-control" required>
+                            <option value="">Select Vaccine</option>
+                            <option value="fmd">Foot and Mouth Disease (FMD)</option>
+                            <option value="hs">Hemorrhagic Septicemia (HS)</option>
+                            <option value="bq">Black Quarter (BQ)</option>
+                            <option value="brucellosis">Brucellosis</option>
+                            <option value="deworming">Deworming</option>
+                        </select>
+                        <span id="vaccine-type-error" class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="vaccination-date">Vaccination Date</label>
+                        <input type="date" id="vaccination-date" class="form-control" required>
+                        <span id="vaccination-date-error" class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="veterinarian">Veterinarian</label>
+                        <input type="text" id="veterinarian" class="form-control">
+                        <span id="veterinarian-error" class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="vaccination-notes">Notes</label>
+                        <textarea id="vaccination-notes" class="form-control" rows="3"></textarea>
+                        <span id="vaccination-notes-error" class="error-message"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-vaccination">Cancel</button>
+                <button class="btn btn-primary" id="save-vaccination">Schedule</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Animal Details Modal (View Only) -->
+    <div id="animal-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Animal Details: <span id="detail-animal-name">Lakshmi</span></h2>
+                <span class="close">×</span>
+            </div>
+            <div class="modal-body">
+                <div class="animal-details">
+                    <div class="form-group">
+                        <label>ID:</label>
+                        <span id="detail-animal-id">B001</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Breed:</label>
+                        <span id="detail-animal-breed">Murrah Buffalo</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Age:</label>
+                        <span id="detail-animal-age">4 years</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Current Status:</label>
+                        <span id="detail-animal-status">Healthy</span>
+                    </div>
+                    
+                    <div class="tab-container">
+                        <div class="tabs">
+                            <div class="tab active" data-tab="health-history">Health History</div>
+                            <div class="tab" data-tab="milk-production">Milk Production</div>
+                            <div class="tab" data-tab="vaccination-history">Vaccination</div>
+                        </div>
+                        <div class="tab-content active" id="health-history-tab">
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot">🩺</div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">Jun 10, 2025</div>
+                                        <div>Routine health check. Temperature: 38.1°C, Weight: 520kg. All parameters normal.</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot">💊</div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">May 22, 2025</div>
+                                        <div>Minor digestive issue reported. Treated with probiotics. Resolved in 2 days.</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot">🩺</div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">Apr 10, 2025</div>
+                                        <div>Routine health check. All parameters normal.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-content" id="milk-production-tab">
+                            <div class="milk-production-chart">
+                                <div class="chart-container">
+                                    <canvas id="animal-milk-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="statistics-row" style="margin-top: 1rem;">
+                                <div class="stat-box">
+                                    <div class="stat-title">Daily Average</div>
+                                    <div class="stat-value">16.5 L</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-title">Monthly High</div>
+                                    <div class="stat-value">22 L</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-title">Fat Content</div>
+                                    <div class="stat-value">7.2%</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-content" id="vaccination-history-tab">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Vaccine</th>
+                                        <th>Administered By</th>
+                                        <th>Next Due</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Mar 15, 2025</td>
+                                        <td>FMD</td>
+                                        <td>Dr. Sharma</td>
+                                        <td>Sep 15, 2025</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dec 10, 2024</td>
+                                        <td>HS</td>
+                                        <td>Dr. Patel</td>
+                                        <td>Jun 10, 2025</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dec 10, 2024</td>
+                                        <td>BQ</td>
+                                        <td>Dr. Patel</td>
+                                        <td>Jun 10, 2025</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="feeding-schedule">
+                        <h3>Feeding Schedule</h3>
+                        <p><strong>Morning:</strong> 7 kg fodder, 2 kg concentrate</p>
+                        <p><strong>Afternoon:</strong> 5 kg fodder, 1 kg concentrate</p>
+                        <p><strong>Evening:</strong> 7 kg fodder, 2 kg concentrate</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="close-animal-details">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Milk Production Report Modal -->
+    <div id="milk-report-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Milk Production Full Report</h2>
+                <span class="close">×</span>
+            </div>
+            <div class="modal-body">
+                <div class="report-summary">
+                    <h3>Summary (As of June 12, 2025, 11:56 AM IST)</h3>
+                    <div class="stat-box">
+                        <div class="stat-title">Total Production Today</div>
+                        <div class="stat-value" id="report-today">348 Liters</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">Weekly Average</div>
+                        <div class="stat-value" id="report-weekly-avg">348.86 Liters/Day</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">Monthly Total</div>
+                        <div class="stat-value" id="report-monthly">9,745 Liters</div>
+                    </div>
+                </div>
+                <div class="report-details">
+                    <h3>Top Performers (Daily)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Animal</th>
+                                <th>Today’s Yield (Liters)</th>
+                                <th>Fat Content</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>B006</td>
+                                <td>Yamuna</td>
+                                <td>22</td>
+                                <td>7.5%</td>
+                            </tr>
+                            <tr>
+                                <td>B001</td>
+                                <td>Lakshmi</td>
+                                <td>18</td>
+                                <td>7.2%</td>
+                            </tr>
+                            <tr>
+                                <td>B005</td>
+                                <td>Parvati</td>
+                                <td>17</td>
+                                <td>6.8%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="report-chart">
+                    <h3>Monthly Trend</h3>
+                    <div class="chart-container">
+                        <canvas id="report-monthly-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="close-milk-report">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification-panel" id="notification-panel">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <span class="close" id="close-notifications">×</span>
+        </div>
+        <div class="notification-body">
+            <div class="notification-item">
+                <div>B003 (Saraswati) requires temperature check in 2 hours.</div>
+                <div class="notification-time">15 minutes ago</div>
+            </div>
+            <div class="notification-item">
+                <div>Feed inventory alert: Concentrate mix low, order soon.</div>
+                <div class="notification-time">1 hour ago</div>
+            </div>
+            <div class="notification-item">
+                <div>B008 (Kamadhenu) vaccination due tomorrow.</div>
+                <div class="notification-time">2 hours ago</div>
+            </div>
+            <div class="notification-item">
+                <div>Weekly milk production report ready for review.</div>
+                <div class="notification-time">3 hours ago</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification-bell" id="notification-bell">
+        🔔
+        <span class="notification-badge">4</span>
+    </div>
+    
+    <div class="toast" id="toast" style="display: none;">
+        <div class="toast-header">
+            <span class="toast-title">Success!</span>
+            <button class="toast-close">×</button>
+        </div>
+        <div class="toast-body">
+            Record has been saved successfully.
+        </div>
+    </div>
+    
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+    
+    <script>
+        const modals = document.querySelectorAll('.modal');
+        const closeButtons = document.querySelectorAll('.close');
+        const addHealthRecordBtn = document.getElementById('add-health-record');
+        const scheduleVaccinationBtn = document.getElementById('schedule-vaccination');
+        const healthRecordModal = document.getElementById('health-record-modal');
+        const vaccinationModal = document.getElementById('vaccination-modal');
+        const animalDetailsModal = document.getElementById('animal-details-modal');
+        const cancelHealthRecordBtn = document.getElementById('cancel-health-record');
+        const saveHealthRecordBtn = document.getElementById('save-health-record');
+        const cancelVaccinationBtn = document.getElementById('cancel-vaccination');
+        const saveVaccinationBtn = document.getElementById('save-vaccination');
+        const closeAnimalDetailsBtn = document.getElementById('close-animal-details');
+        const viewFullReportBtn = document.getElementById('view-full-report');
+        const milkReportModal = document.getElementById('milk-report-modal');
+        const closeMilkReportBtn = document.getElementById('close-milk-report');
+        const toast = document.getElementById('toast');
+        const toastClose = document.querySelector('.toast-close');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const notificationBell = document.getElementById('notification-bell');
+        const notificationPanel = document.getElementById('notification-panel');
+        const closeNotifications = document.getElementById('close-notifications');
+
+        // Open modals
+        addHealthRecordBtn.addEventListener('click', () => {
+            healthRecordModal.style.display = 'flex';
+            document.getElementById('health-record-form').reset();
+            clearErrors('health-record-form');
+        });
+
+        scheduleVaccinationBtn.addEventListener('click', () => {
+            vaccinationModal.style.display = 'flex';
+            document.getElementById('vaccination-form').reset();
+            clearErrors('vaccination-form');
+        });
+
+        viewFullReportBtn.addEventListener('click', () => {
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                milkReportModal.style.display = 'flex';
+                updateMilkReport();
+            }, 1000);
+        });
+
+        // Close modals
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', () => modals.forEach(modal => modal.style.display = 'none'));
+        });
+
+        cancelHealthRecordBtn.addEventListener('click', () => {
+            healthRecordModal.style.display = 'none';
+            clearErrors('health-record-form');
+        });
+        cancelVaccinationBtn.addEventListener('click', () => {
+            vaccinationModal.style.display = 'none';
+            clearErrors('vaccination-form');
+        });
+        closeAnimalDetailsBtn.addEventListener('click', () => animalDetailsModal.style.display = 'none');
+        closeMilkReportBtn.addEventListener('click', () => milkReportModal.style.display = 'none');
+
+        // Tab handling
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabContainer = tab.closest('.tab-container');
+                tabContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                tabContainer.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                tabContainer.querySelector(`#${tab.getAttribute('data-tab')}-tab`).classList.add('active');
+            });
+        });
+
+        // Filter and search
+        document.querySelector('.filter-btn')?.addEventListener('click', (e) => {
+            e.target.classList.add('active');
+            console.log(`Filtering by: ${e.target.getAttribute('data-filter')}`);
+        });
+
+        document.querySelector('.search-input')?.addEventListener('input', (e) => {
+            console.log(`Searching for: ${e.target.value.toLowerCase()}`);
+        });
+
+        // Record actions
+        function updateRecordButtons() {
+            document.querySelectorAll('.view-record').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const animalId = btn.getAttribute('data-id');
+                    document.getElementById('detail-animal-id').textContent = animalId;
+                    animalDetailsModal.style.display = 'flex';
+                });
+            });
+
+            document.querySelectorAll('.edit-record').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const animalId = btn.getAttribute('data-id');
+                    document.getElementById('animal-id').value = animalId;
+                    healthRecordModal.style.display = 'flex';
+                    clearErrors('health-record-form');
+                });
+            });
+
+            document.querySelectorAll('.delete-record').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const animalId = btn.getAttribute('data-id');
+                    if (confirm(`Are you sure you want to delete the record for animal ${animalId}?`)) {
+                        showLoading();
+                        setTimeout(() => {
+                            hideLoading();
+                            btn.closest('tr').remove();
+                            showToast(`Record for animal ${animalId} deleted successfully!`);
+                        }, 1000);
+                    }
+                });
+            });
+        }
+
+        updateRecordButtons();
+
+        // Loading and toast
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        function showToast(message) {
+            document.querySelector('.toast-body').textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        }
+
+        // Clear error messages
+        function clearErrors(formId) {
+            const form = document.getElementById(formId);
+            form.querySelectorAll('.error-message').forEach(error => error.textContent = '');
+            form.querySelectorAll('.form-control').forEach(input => input.classList.remove('invalid'));
+        }
+
+        // Real-time validation for Health Record Form
+        function validateHealthForm() {
+            let isValid = true;
+            const animalId = document.getElementById('animal-id');
+            const healthStatus = document.getElementById('health-status');
+            const temperature = document.getElementById('temperature');
+            const weight = document.getElementById('weight');
+            const symptoms = document.getElementById('symptoms');
+            const treatment = document.getElementById('treatment');
+
+            // Animal ID
+            if (!animalId.value) {
+                document.getElementById('animal-id-error').textContent = 'Please select an animal.';
+                animalId.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('animal-id-error').textContent = '';
+                animalId.classList.remove('invalid');
+            }
+
+            // Health Status
+            if (!healthStatus.value) {
+                document.getElementById('health-status-error').textContent = 'Please select a health status.';
+                healthStatus.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('health-status-error').textContent = '';
+                healthStatus.classList.remove('invalid');
+            }
+
+            // Temperature
+            const tempValue = parseFloat(temperature.value);
+            if (temperature.value && (isNaN(tempValue) || tempValue < 35 || tempValue > 42)) {
+                document.getElementById('temperature-error').textContent = 'Temperature must be between 35°C and 42°C.';
+                temperature.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('temperature-error').textContent = '';
+                temperature.classList.remove('invalid');
+            }
+
+            // Weight
+            const weightValue = parseInt(weight.value);
+            if (weight.value && (isNaN(weightValue) || weightValue < 200 || weightValue > 800)) {
+                document.getElementById('weight-error').textContent = 'Weight must be between 200 kg and 800 kg.';
+                weight.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('weight-error').textContent = '';
+                weight.classList.remove('invalid');
+            }
+
+            // Symptoms (optional, but check length if provided)
+            if (symptoms.value.length > 500) {
+                document.getElementById('symptoms-error').textContent = 'Symptoms must be 500 characters or less.';
+                symptoms.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('symptoms-error').textContent = '';
+                symptoms.classList.remove('invalid');
+            }
+
+            // Treatment (optional, but check length if provided)
+            if (treatment.value.length > 500) {
+                document.getElementById('treatment-error').textContent = 'Treatment must be 500 characters or less.';
+                treatment.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('treatment-error').textContent = '';
+                treatment.classList.remove('invalid');
+            }
+
+            return isValid;
+        }
+
+        // Real-time validation for Vaccination Form
+        function validateVaccinationForm() {
+            let isValid = true;
+            const animalId = document.getElementById('vacc-animal-id');
+            const vaccineType = document.getElementById('vaccine-type');
+            const vaccinationDate = document.getElementById('vaccination-date');
+            const veterinarian = document.getElementById('veterinarian');
+            const notes = document.getElementById('vaccination-notes');
+            const today = new Date().toISOString().split('T')[0];
+
+            // Animal ID
+            if (!animalId.value) {
+                document.getElementById('vacc-animal-id-error').textContent = 'Please select an animal.';
+                animalId.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('vacc-animal-id-error').textContent = '';
+                animalId.classList.remove('invalid');
+            }
+
+            // Vaccine Type
+            if (!vaccineType.value) {
+                document.getElementById('vaccine-type-error').textContent = 'Please select a vaccine type.';
+                vaccineType.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('vaccine-type-error').textContent = '';
+                vaccineType.classList.remove('invalid');
+            }
+
+            // Vaccination Date
+            if (!vaccinationDate.value) {
+                document.getElementById('vaccination-date-error').textContent = 'Please select a vaccination date.';
+                vaccinationDate.classList.add('invalid');
+                isValid = false;
+            } else if (vaccinationDate.value < today) {
+                document.getElementById('vaccination-date-error').textContent = 'Vaccination date cannot be in the past.';
+                vaccinationDate.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('vaccination-date-error').textContent = '';
+                vaccinationDate.classList.remove('invalid');
+            }
+
+            // Veterinarian (optional, but check length and format if provided)
+            if (veterinarian.value && !/^[a-zA-Z\s.]{0,50}$/.test(veterinarian.value)) {
+                document.getElementById('veterinarian-error').textContent = 'Veterinarian name must be letters and spaces, max 50 characters.';
+                veterinarian.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('veterinarian-error').textContent = '';
+                veterinarian.classList.remove('invalid');
+            }
+
+            // Notes (optional, but check length if provided)
+            if (notes.value.length > 500) {
+                document.getElementById('vaccination-notes-error').textContent = 'Notes must be 500 characters or less.';
+                notes.classList.add('invalid');
+                isValid = false;
+            } else {
+                document.getElementById('vaccination-notes-error').textContent = '';
+                notes.classList.remove('invalid');
+            }
+
+            return isValid;
+        }
+
+        // Add real-time validation listeners
+        document.getElementById('health-record-form').querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', validateHealthForm);
+            input.addEventListener('change', validateHealthForm);
+        });
+
+        document.getElementById('vaccination-form').querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', validateVaccinationForm);
+            input.addEventListener('change', validateVaccinationForm);
+        });
+
+        // Save records with validation
+        saveHealthRecordBtn.addEventListener('click', () => {
+            if (!validateHealthForm()) {
+                showToast('Please correct the errors in the form.');
+                return;
+            }
+            const animalId = document.getElementById('animal-id').value;
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                healthRecordModal.style.display = 'none';
+                const select = document.getElementById('animal-id');
+                const animalName = select.options[select.selectedIndex].text.split(' - ')[1];
+                const tableBody = document.querySelector('#health-records-table tbody');
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${animalId}</td>
+                    <td>${animalName}</td>
+                    <td>Today, ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="view-icon view-record" data-id="${animalId}"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn edit-record" data-id="${animalId}">Edit</button>
+                            <button class="action-btn delete-record" data-id="${animalId}">Delete</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.prepend(newRow);
+                updateRecordButtons();
+                showToast(`Health record for ${animalName} saved successfully!`);
+                document.getElementById('health-record-form').reset();
+                clearErrors('health-record-form');
+            }, 1000);
+        });
+
+        saveVaccinationBtn.addEventListener('click', () => {
+            if (!validateVaccinationForm()) {
+                showToast('Please correct the errors in the form.');
+                return;
+            }
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                vaccinationModal.style.display = 'none';
+                showToast('Vaccination scheduled successfully!');
+                document.getElementById('vaccination-form').reset();
+                clearErrors('vaccination-form');
+            }, 1000);
+        });
+
+        toastClose.addEventListener('click', () => toast.style.display = 'none');
+
+        // Notifications
+        notificationBell.addEventListener('click', () => {
+            notificationPanel.style.display = notificationPanel.style.display === 'block' ? 'none' : 'block';
+        });
+
+        closeNotifications.addEventListener('click', () => notificationPanel.style.display = 'none');
+
+        window.addEventListener('click', (event) => {
+            modals.forEach(modal => {
+                if (event.target === modal) modal.style.display = 'none';
+            });
+            if (event.target !== notificationBell && event.target !== notificationPanel && !notificationPanel.contains(event.target)) {
+                notificationPanel.style.display = 'none';
+            }
+        });
+
+        // Random notifications
+        function showRandomNotification() {
+            const notifications = [
+                'Temperature check reminder for B003.',
+                'New milk production record detected!',
+                'Feed inventory running low.',
+                'Vaccination due tomorrow for B008.'
+            ];
+            const randomIndex = Math.floor(Math.random() * notifications.length);
+            showToast(notifications[randomIndex]);
+            const badge = document.querySelector('.notification-badge');
+            if (badge) badge.textContent = parseInt(badge.textContent) + 1;
+            setTimeout(showRandomNotification, Math.floor(Math.random() * 20000) + 15000);
+        }
+
+        setTimeout(showRandomNotification, 30000);
+
+        // Chart.js Donut Pie Charts with Continuous Rotation
+        let dailyChart, weeklyChart, monthlyChart, animalMilkChart, reportMonthlyChart;
+
+        function createDonutChart(canvasId, data, colors) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            let rotationAngle = 0;
+            const chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.values,
+                        backgroundColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    rotation: rotationAngle,
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1000,
+                        easing: 'easeInOutQuad'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 12 },
+                                padding: 10
+                            }
+                        }
+                    }
+                }
+            });
+
+            function rotateChart() {
+                rotationAngle += 0.5;
+                if (rotationAngle >= 360) rotationAngle -= 360;
+                chart.options.rotation = rotationAngle;
+                chart.update('none');
+                requestAnimationFrame(rotateChart);
+            }
+
+            const chartContainer = ctx.canvas.closest('.tab-content, .report-chart');
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    if (!chart.isRotating) {
+                        chart.isRotating = true;
+                        rotateChart();
+                    }
+                } else {
+                    chart.isRotating = false;
+                }
+            }, { threshold: 0.1 });
+            observer.observe(chartContainer);
+
+            return chart;
+        }
+
+        dailyChart = createDonutChart('daily-chart', {
+            labels: ['Morning', 'Noon', 'Evening', 'Night'],
+            values: [100, 80, 90, 78]
+        }, ['#78b387', '#6bb5d8', '#b39ddb', '#f48fb1']);
+
+        weeklyChart = createDonutChart('weekly-chart', {
+            labels: ['Monday-Sunday'],
+            values: [2436]
+        }, ['#6bb5d8']);
+
+        monthlyChart = createDonutChart('monthly-chart', {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            values: [2436, 2400, 2450, 2459]
+        }, ['#b39ddb', '#78b387', '#6bb5d8', '#f48fb1']);
+
+        animalMilkChart = createDonutChart('animal-milk-chart', {
+            labels: ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'],
+            values: [450, 460, 470, 465, 475, 480]
+        }, ['#78b387', '#6bb5d8', '#b39ddb', '#f48fb1', '#ffb74d', '#90caf9']);
+
+        reportMonthlyChart = createDonutChart('report-monthly-chart', {
+            labels: ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'],
+            values: [9745, 9800, 9650, 9700, 9750, 9745]
+        }, ['#78b387', '#6bb5d8', '#b39ddb', '#f48fb1', '#ffb74d', '#90caf9']);
+
+        function updateChartData(chart, newData) {
+            chart.data.datasets[0].data = newData;
+            chart.update('none');
+        }
+
+        // Real-time milk report update
+        function updateMilkReport() {
+            const today = 348 + Math.random() * 10;
+            const weeklyAvg = (2436 + Math.random() * 50) / 7;
+            const monthly = 9745 + Math.random() * 100;
+            document.getElementById('report-today').textContent = today.toFixed(1) + ' Liters';
+            document.getElementById('report-weekly-avg').textContent = weeklyAvg.toFixed(2) + ' Liters/Day';
+            document.getElementById('report-monthly').textContent = monthly.toFixed(0) + ' Liters';
+            updateChartData(reportMonthlyChart, [
+                9745 + Math.random() * 100,
+                9800 + Math.random() * 100,
+                9650 + Math.random() * 100,
+                9700 + Math.random() * 100,
+                9750 + Math.random() * 100,
+                9745 + Math.random() * 100
+            ]);
+        }
+
+        setInterval(() => {
+            updateChartData(dailyChart, [
+                100 + Math.random() * 10,
+                80 + Math.random() * 10,
+                90 + Math.random() * 10,
+                78 + Math.random() * 10
+            ]);
+            updateChartData(weeklyChart, [2436 + Math.random() * 50]);
+            updateChartData(monthlyChart, [
+                2436 + Math.random() * 50,
+                2400 + Math.random() * 50,
+                2450 + Math.random() * 50,
+                2459 + Math.random() * 50
+            ]);
+            updateChartData(animalMilkChart, [
+                450 + Math.random() * 20,
+                460 + Math.random() * 20,
+                470 + Math.random() * 20,
+                465 + Math.random() * 20,
+                475 + Math.random() * 20,
+                480 + Math.random() * 20
+            ]);
+            if (milkReportModal.style.display === 'flex') {
+                updateMilkReport();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
